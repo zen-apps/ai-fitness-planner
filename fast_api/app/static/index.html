@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Josh Janzen - AI & Data Science Leader</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5CPZ14Z0Z"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-R5CPZ14Z0Z');
+    </script>
+    <meta property="og:title" content="Josh Janzen - AI & Data Science Leader">
+    <meta property="og:description" content="Transforming Business Through GenAI & Data Science Innovation">
+    <meta property="og:image" content="/static/images/profile.png">
+    <meta property="og:url" content="https://joshjanzen.com">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="/static/images/profile.png">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #4285f4;
+            --text-color: #333;
+            --background-color: #f8f9fa;
+            --section-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background-color: var(--section-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 3rem;
+        }
+
+        .logo {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Mobile menu button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 0;
+            background-color: var(--section-bg);
+        }
+
+        .hero-container {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .profile-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            flex-shrink: 0;
+            object-fit: cover;
+        }
+
+        .hero-content {
+            text-align: left;
+        }
+
+        .hero-content h1 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .hero-content h2 {
+            margin-bottom: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--primary-color);
+        }
+
+        .highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .highlight-card {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .metric {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+
+        .experience-item {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .skill-category {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .project-card {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .hobbies-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            align-items: start;
+        }
+
+        .competition-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .competition-photo {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .competition-photo img {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .interests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .social-links a:hover {
+            background-color: rgba(26, 115, 232, 0.1);
+        }
+
+        footer {
+            background-color: var(--section-bg);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-links {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: var(--section-bg);
+                flex-direction: column;
+                padding: 1rem 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                transform: translateY(-100%);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+                gap: 1rem;
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .nav-links a {
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #eee;
+            }
+
+            .nav-links a:last-child {
+                border-bottom: none;
+            }
+
+            .hero-container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-content {
+                text-align: center;
+            }
+
+            .hobbies-container {
+                flex-direction: column;
+            }
+
+            .competition-photo img {
+                max-width: 100%;
+            }
+
+            .social-links {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <header>
+        <nav class="container">
+            <div class="logo"></div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            <div class="nav-links" id="navLinks">
+                <a href="#about">About</a>
+                <a href="#projects">Projects</a>
+                <a href="#experience">Experience</a>
+                <a href="#presentations">Presentations</a>
+                <a href="#hobbies">Hobbies</a>
+                <a href="/virtual_chat">Chat</a>
+                <a href="https://labs.joshjanzen.com/" target="_blank">Demo</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <img src="/static/images/profile.png" alt="Josh Janzen" class="profile-img">
+            <div class="hero-content">
+                <h1>Josh Janzen</h1>
+                <h2>Data Science Director</h2>
+                <p>Transforming Business Through GenAI & Data Science Innovation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="section-title">About Me</h2>
+            <p>As a Data Science Director and member of the GenAI Center of Excellence, I specialize in transforming business vision into measurable outcomes through AI and analytics initiatives. My focus is on identifying and implementing high-impact AI solutions that drive significant business value and accelerate digital transformation.</p>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section">
+        <div class="container">
+            <h2 class="section-title">Featured Projects</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3>AI Roster Optimization</h3>
+                    <p>Built a comparative study between OpenAI's o1 model and Google OR-Tools for optimizing basketball team rotations, demonstrating different approaches to complex scheduling constraints.</p>
+                    
+                    <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; margin: 1rem 0;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
+                            src="https://www.youtube.com/embed/2ReIEWHLQbk"
+                            title="AI Roster Optimization Demo"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                
+                    <ul style="list-style: none; padding: 0; margin: 1rem 0;">
+                        <li><strong>Key Features:</strong>
+                            <ul style="padding-left: 1rem; margin: 0.5rem 0;">
+                                <li>Interactive web interface using Streamlit</li>
+                                <li>Side-by-side comparison of LLM vs OR-Tools solutions</li>
+                                <li>Complex constraint handling</li>
+                                <li>Visual rotation schedule representation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Architecture:</strong> FastAPI backend, Streamlit frontend, Docker containerization</li>
+                    </ul>
+                    <p><strong>Technologies:</strong> Python, FastAPI, Streamlit, OpenAI API, Google OR-Tools, Docker</p>
+                </div>
+
+                <div class="project-card">
+                    <h3>AI-Powered Math Learning Assistant</h3>
+                    <p>Developed an intelligent math tutoring system using LangGraph for reliable and controlled question generation workflows.</p>
+                    
+                    <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; margin: 1rem 0;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
+                            src="https://www.youtube.com/embed/0AF59uxAPHk"
+                            title="AI Math Learning Assistant Demo"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                
+                    <ul style="list-style: none; padding: 0; margin: 1rem 0;">
+                        <li><strong>Key Features:</strong>
+                            <ul style="padding-left: 1rem; margin: 0.5rem 0;">
+                                <li>Grade-adaptive questioning system (Pre-K to 12th)</li>
+                                <li>Sophisticated state machine for question generation</li>
+                                <li>Comprehensive validation workflow</li>
+                                <li>Real-time hint generation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Architecture:</strong> LangGraph state management, Docker containerization</li>
+                    </ul>
+                    <p><strong>Technologies:</strong> LangGraph, Streamlit, Docker, StateGraph</p>
+                </div>
+
+                <div class="project-card">
+                    <h3>RAG-Powered Document Intelligence System</h3>
+                    <p>Built a production-grade RAG (Retrieval Augmented Generation) application with separated frontend/backend architecture, enabling intelligent document conversations with custom PDFs.</p>
+                    <ul style="list-style: none; padding: 0; margin: 1rem 0;">
+                        <li><strong>Architecture:</strong> FastAPI Backend, Streamlit Frontend</li>
+                        <li><strong>Key Features:</strong>
+                            <ul style="padding-left: 1rem; margin: 0.5rem 0;">
+                                <li>Hugging Face embeddings with FAISS vector storage</li>
+                                <li>Docker containerization with Make automation</li>
+                                <li>Production-ready architecture with clear separation of concerns</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <p><strong>Technologies:</strong> Python, FastAPI, Streamlit, LangChain, Docker</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Section -->
+    <section id="experience" class="section">
+        <div class="container">
+            <h2 class="section-title">Impact & Experience</h2>
+            <div class="experience-item">
+                <h3>AI & Data Science Leadership</h3>
+                <p>Director of Data Science - C.H. Robinson</p>
+                <ul>
+                    <li>GenAI initiatives including LLM implementation for document processing</li>
+                    <li>Developed and monetized data science applications connecting customer shipment data to transportation optimization</li>
+                    <li>External-facing Data Science application evaluating supply chain efficiency</li>
+                </ul>
+            </div>
+            <div class="experience-item">
+                <h3>Technical Innovation</h3>
+                <p>Principal & Senior Data Scientist Roles</p>
+                <ul>
+                    <li>Architected modern data solutions using Docker, FastAPI, and cloud technologies</li>
+                    <li>Led implementation of recommendation systems and supply chain optimization tools</li>
+                    <li>Pioneered data product development across multiple Fortune 500 companies</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="section">
+        <div class="container">
+            <h2 class="section-title">Technical Expertise</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>AI & Machine Learning</h3>
+                    <ul>
+                        <li>Large Language Models (LLMs)</li>
+                        <li>Retrieval Augmented Generation (RAG)</li>
+                        <li>Natural Language Processing</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Technologies</h3>
+                    <ul>
+                        <li>Python, Docker, FastAPI</li>
+                        <li>Azure & Google Cloud Platform</li>
+                        <li>LangChain, Transformers</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Leadership</h3>
+                    <ul>
+                        <li>AI Strategy & Implementation</li>
+                        <li>Team Development & Mentoring</li>
+                        <li>Product Monetization</li>
+                        <li>Digital Transformation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Presentations Section -->
+    <section id="presentations" class="section">
+        <div class="container">
+            <h2 class="section-title">Conference Presentations</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3>AutoML: Automating Data Science</h3>
+                    <p><a href="https://minneanalytics.org/">MinneAnalytics Data Tech 2019</a></p>
+                    <p>Explored how AutoML tools can enhance data scientist productivity while discussing the balance between automation and expertise. Demonstrated practical applications of AutoML in real-world scenarios.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Key Points:</strong>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li>• AutoML for data preparation and model tuning</li>
+                            <li>• Impact on data science team efficiency</li>
+                            <li>• Live tool demonstration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3>ETL Clickstream to Data Product APIs</h3>
+                    <p><a href="https://minneanalytics.org/">MinneAnalytics MinneFrama 2018</a></p>
+                    <p>Demonstrated a four-step process to transform clickstream data into production-ready ML models and APIs, requiring no backend engineering support.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Technologies:</strong>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li>• Apache Spark</li>
+                            <li>• Cloud Computing</li>
+                            <li>• REST APIs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3>Algorithmic Product Recommendations</h3>
+                    <p><a href="https://minneanalytics.org/">MinneAnalytics FARCON 2015</a></p>
+                    <p>Deep dive into the mathematics behind product recommendation systems, including live demonstrations of algorithms in action.</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>Focus Areas:</strong>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li>• Recommendation algorithms</li>
+                            <li>• Customer experience enhancement</li>
+                            <li>• Live system demonstration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hobbies & Athletics Section -->
+    <section id="hobbies" class="section">
+        <div class="container">
+            <h2 class="section-title">Competitive Spirit</h2>
+            <div class="hobbies-container" style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: start;">
+                <!-- Competition Info -->
+                <div class="competition-info" style="flex: 1; min-width: 300px;">
+                    <div class="experience-item">
+                        <h3>Professional Natural Athlete</h3>
+                        <p><a href="https://www.nationalgym.com/national-gym-pro-athletes-gallery-athletes/pro-male-physique/jjanzen.html">NGA Pro Male Physique Competitor</a> since 2015</p>
+                        <br>
+                        <div class="achievements">
+                            <strong>Key Achievements:</strong>
+                            <ul>
+                                <li>2015 NGA Titan Classic - 1st Place Open Physique (Pro Card)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <div class="container">
+            <h2 class="section-title">Connect</h2>
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/joshjanzen" target="_blank">LinkedIn</a>
+                <a href="https://www.github.com/zen-apps" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Josh Janzen. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                const navLinks = document.getElementById('navLinks');
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC31TkvII9C2y1Snte1jajJzLFRIyN6jrg",
+            authDomain: "zen-general-377713.firebaseapp.com",
+            projectId: "zen-general-377713",
+            storageBucket: "zen-general-377713.firebasestorage.app",
+            messagingSenderId: "356272800218",
+            appId: "1:356272800218:web:60fb9671048719810f40e3",
+            measurementId: "G-9W3RMT43C0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+    
+</body>
+</html>

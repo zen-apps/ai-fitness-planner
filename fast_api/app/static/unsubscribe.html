@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsubscribe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .message {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .email {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            display: inline-block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Unsubscribe Request</h1>
+        <div class="message">
+            <p>Your unsubscribe request has been processed.</p>
+            <div class="email" id="email-display"></div>
+        </div>
+        <div id="status-message"></div>
+    </div>
+
+    <script>
+        // Get email parameter from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email_address');
+        
+        if (email) {
+            document.getElementById('email-display').textContent = email;
+            
+            // Send unsubscribe request to API
+            console.log('Sending unsubscribe request for:', email);
+            fetch('/api/unsubscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email_address: email })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                const statusDiv = document.getElementById('status-message');
+                if (data.success) {
+                    statusDiv.innerHTML = '<p class="success">Successfully unsubscribed!</p>';
+                } else {
+                    statusDiv.innerHTML = `<p class="error">Error: ${data.message || 'Unknown error'}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                const statusDiv = document.getElementById('status-message');
+                statusDiv.innerHTML = `<p class="error">Network error: ${error.message}</p>`;
+            });
+        } else {
+            document.getElementById('email-display').textContent = 'No email address provided';
+            document.getElementById('status-message').innerHTML = '<p class="error">No email address provided in URL.</p>';
+        }
+    </script>
+</body>
+</html>
