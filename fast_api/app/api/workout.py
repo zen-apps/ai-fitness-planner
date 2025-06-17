@@ -340,171 +340,9 @@ async def test_db():
     raise HTTPException(status_code=500, detail=error_msg)
 
 
-"""
-version: '3.3'
-
-services:
-  # Jupyter Notebook for AI/ML development
-  notebook_ai_fitness_planner:
-    restart: always
-    build: ./jupyter_notebook
-    ports:
-      - "1960:3839"
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    environment:
-      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
-      - JUPYTER_PASSWORD_HASH=${JUPYTER_PASSWORD_HASH}
-      - MONGODB_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
-    command: jupyter lab --port=3839 --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.password="${JUPYTER_PASSWORD_HASH}"
-    networks:
-      - ai-fitness-network
-    depends_on:
-      - ai_fitness_planner_db
-      - mongodb_ai_fitness_planner
-    
-  # PostgreSQL Database
-  ai_fitness_planner_db:
-    image: postgres:15-alpine
-    container_name: ai_fitness_planner_db
-    restart: always
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "4553:5432"
-    volumes:
-      - db_data_ai_fitness_planner:/var/lib/postgresql/data
-    networks:
-      - ai-fitness-network
-      - sp-net
-  
-# MongoDB Database for USDA Nutrition Data
-  mongodb_ai_fitness_planner:
-    image: mongo:7.0
-    container_name: mongodb_ai_fitness_planner
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
-    ports:
-      - "27019:27017"  # Different port to avoid conflicts
-    volumes:
-      - mongodb_data_ai_fitness_planner:/data/db
-      - ./data/mongodb_init:/docker-entrypoint-initdb.d  # For init scripts
-    networks:
-      - ai-fitness-network
-      - sp-net
-
-  # Mongo Express for MongoDB management
-  mongo_express_ai_fitness_planner:
-    image: mongo-express:1.0.0
-    container_name: mongo_express_ai_fitness_planner
-    restart: always
-    ports:
-      - "8084:8081"  # Different port to avoid conflicts
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
-      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - mongodb_ai_fitness_planner
-
-  # pgAdmin for database management
-  pgadmin_ai_fitness_planner:
-    container_name: pgadmin4_ai_fitness_planner
-    image: dpage/pgadmin4:latest
-    restart: always
-    volumes:
-      - pgadmin_ai_fitness_planner:/var/lib/pgadmin
-    env_file:
-      - .env
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    ports:
-      - "4053:80"
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-
-  # FastAPI Backend
-  fast_api_ai_fitness_planner:
-    restart: always
-    build: 
-      context: ./fast_api
-      dockerfile: Dockerfile-dev
-    env_file:
-      - .env
-    volumes:
-      - ./:/app
-    ports:
-      - "1015:8000"
-    command: ["--host", "0.0.0.0", "fast_api.app.main:app", "--reload"]
-    networks:  # ADD THIS SECTION
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-      - mongodb_ai_fitness_planner
-
-  # Streamlit Frontend
-  streamlit_app_ai_fitness_planner:
-    build: 
-      context: ./streamlit
-      dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - .env
-    command: "streamlit run streamlit/🏠_home.py"
-    ports:
-      - "8526:8501"
-    volumes:
-      - ./streamlit:/usr/src/app
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-      - mongodb_ai_fitness_planner
-
-# Named volumes for data persistence
-volumes:
-  db_data_ai_fitness_planner:
-    driver: local
-  pgadmin_ai_fitness_planner:
-    driver: local
-  mongodb_data_ai_fitness_planner:
-    driver: local
-
-# Networks
-networks:
-  ai-fitness-network:
-    driver: bridge
-  sp-net:
-    external: true
-"""
-
-
-@workout.get("/load_usda_data/")
-async def load_usda_data():
+@workout.get("/download_raw_usda_data/")
+async def download_raw_usda_data():
     """Load USDA Branded Foods data into PostgreSQL database"""
-    import psycopg2
-    from psycopg2 import sql
 
     # Step 1: Download and extract the USDA Branded Foods data
     json_file = download_usda_branded_foods()
@@ -688,7 +526,7 @@ async def check_usda_data():
 
 # Simple nutrition search endpoint to test functionality
 @workout.get("/search_nutrition/")
-async def search_nutrition(query: str = "coca cola", limit: int = 5):
+async def search_nutrition(query: str = "coca cola", limit: int = 1):
     """Search nutrition data to test MongoDB functionality"""
     try:
         client = get_mongo_client()
@@ -707,6 +545,37 @@ async def search_nutrition(query: str = "coca cola", limit: int = 5):
         # Format results for display
         formatted_results = []
         for result in results:
+            """{
+              "status": "data_exists",
+              "collection": "branded_foods",
+              "document_count": 452998,
+              "sample_fields": [
+                "_id",
+                "foodClass",
+                "description",
+                "foodNutrients",
+                "foodAttributes",
+                "modifiedDate",
+                "availableDate",
+                "marketCountry",
+                "brandOwner",
+                "gtinUpc",
+                "dataSource",
+                "ingredients",
+                "servingSize",
+                "servingSizeUnit",
+                "householdServingFullText",
+                "labelNutrients",
+                "tradeChannels",
+                "microbes",
+                "brandedFoodCategory",
+                "dataType",
+                "fdcId",
+                "publicationDate",
+                "foodUpdateLog"
+              ],
+              "message": "Found 452,998 branded food documents"
+            }"""
             formatted_results.append(
                 {
                     "description": result.get("description", ""),
@@ -716,6 +585,18 @@ async def search_nutrition(query: str = "coca cola", limit: int = 5):
                     "calories": result.get("labelNutrients", {})
                     .get("calories", {})
                     .get("value", 0),
+                    "foodClass": result.get("foodClass", ""),
+                    "foodNutrients": result.get("foodNutrients", []),
+                    "foodAttributes": result.get("foodAttributes", []),
+                    "ingredients": result.get("ingredients", ""),
+                    "servingSize": result.get("servingSize", None),
+                    "servingSizeUnit": result.get("servingSizeUnit", ""),
+                    "gtinUpc": result.get("gtinUpc", ""),
+                    "householdServingFullText": result.get(
+                        "householdServingFullText", ""
+                    ),
+                    "labelNutrients": result.get("labelNutrients", {}),
+                    "dataSource": result.get("dataSource", ""),
                 }
             )
 
@@ -731,4 +612,462 @@ async def search_nutrition(query: str = "coca cola", limit: int = 5):
         logger.error(f"Error searching nutrition data: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to search nutrition data: {str(e)}"
+        )
+
+
+@workout.get("/database_stats/")
+async def get_database_stats():
+    """Get current database statistics"""
+    try:
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+
+        collections = db.list_collection_names()
+        stats = {"collections": {}}
+
+        for collection_name in collections:
+            try:
+                collection = db[collection_name]
+                count = collection.count_documents({})
+
+                # Get a sample document to show structure
+                sample = collection.find_one()
+                fields = list(sample.keys()) if sample else []
+
+                stats["collections"][collection_name] = {
+                    "document_count": count,
+                    "sample_fields": fields[:10],  # First 10 fields
+                    "total_fields": len(fields),
+                }
+            except Exception as e:
+                stats["collections"][collection_name] = {"error": str(e)}
+
+        # Get database stats
+        db_stats = db.command("dbstats")
+
+        client.close()
+
+        return {
+            "database_name": os.getenv("MONGO_DB_NAME", "usda_nutrition"),
+            "total_collections": len(collections),
+            "collection_details": stats["collections"],
+            "database_size_mb": round(db_stats.get("dataSize", 0) / (1024 * 1024), 2),
+            "storage_size_mb": round(db_stats.get("storageSize", 0) / (1024 * 1024), 2),
+            "indexes": db_stats.get("indexes", 0),
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting database stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+
+
+# josh
+
+
+@workout.post("/import_usda_data/")
+async def import_usda_data(
+    file_path: str = "./fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json",
+):
+    """Import USDA Branded Foods data into MongoDB with enhanced nutrition calculations"""
+    import json
+    import ijson
+    from decimal import Decimal
+    from pymongo import MongoClient
+    import pymongo
+
+    def convert_decimal_in_dict(d):
+        """Recursively convert all Decimal values to float in a dictionary"""
+        for k, v in d.items():
+            if isinstance(v, Decimal):
+                d[k] = float(v)
+            elif isinstance(v, dict):
+                convert_decimal_in_dict(v)
+            elif isinstance(v, list):
+                for item in v:
+                    if isinstance(item, dict):
+                        convert_decimal_in_dict(item)
+        return d
+
+    def extract_nutrient_by_id(food_nutrients, nutrient_id):
+        """Extract specific nutrient amount by ID"""
+        for nutrient in food_nutrients:
+            if nutrient.get("nutrient", {}).get("id") == nutrient_id:
+                return nutrient.get("amount", 0)
+        return 0
+
+    def calculate_per_100g_values(food_item):
+        """Calculate per-100g nutrition values and add enhanced structure"""
+        serving_size = food_item.get("servingSize", 100)
+
+        if not serving_size or serving_size <= 0:
+            serving_size = 100
+
+        multiplier = 100 / serving_size
+        food_nutrients = food_item.get("foodNutrients", [])
+
+        nutrient_map = {
+            1008: "energy_kcal",
+            1003: "protein_g",
+            1004: "total_fat_g",
+            1005: "carbs_g",
+            1079: "fiber_g",
+            2000: "sugars_g",
+            1093: "sodium_mg",
+            1253: "cholesterol_mg",
+            1258: "saturated_fat_g",
+            1257: "trans_fat_g",
+        }
+
+        per_serving = {}
+        per_100g = {}
+
+        for nutrient_id, nutrient_name in nutrient_map.items():
+            amount = extract_nutrient_by_id(food_nutrients, nutrient_id)
+            per_serving[nutrient_name] = amount
+            per_100g[nutrient_name] = round(amount * multiplier, 2)
+
+        label_nutrients = food_item.get("labelNutrients", {})
+        enhanced_label = {}
+
+        label_mapping = {
+            "calories": "calories",
+            "fat": "fat_g",
+            "saturatedFat": "saturated_fat_g",
+            "transFat": "trans_fat_g",
+            "cholesterol": "cholesterol_mg",
+            "sodium": "sodium_mg",
+            "carbohydrates": "carbs_g",
+            "fiber": "fiber_g",
+            "sugars": "sugars_g",
+            "protein": "protein_g",
+        }
+
+        for label_key, standard_key in label_mapping.items():
+            if label_key in label_nutrients and "value" in label_nutrients[label_key]:
+                enhanced_label[standard_key] = label_nutrients[label_key]["value"]
+
+        food_item["nutrition_enhanced"] = {
+            "serving_info": {
+                "serving_size_g": serving_size,
+                "serving_description": food_item.get("householdServingFullText", ""),
+                "multiplier_to_100g": round(multiplier, 4),
+            },
+            "per_serving": per_serving,
+            "per_100g": per_100g,
+            "label_nutrients_enhanced": enhanced_label,
+            "nutrition_density_score": calculate_nutrition_density_score(per_100g),
+            "macro_breakdown": calculate_macro_breakdown(per_100g),
+        }
+
+        return food_item
+
+    def calculate_nutrition_density_score(per_100g):
+        """Calculate a simple nutrition density score"""
+        try:
+            protein = per_100g.get("protein_g", 0)
+            fiber = per_100g.get("fiber_g", 0)
+            calories = per_100g.get("energy_kcal", 1)
+
+            if calories > 0:
+                return round((protein + fiber) / calories * 100, 2)
+            return 0
+        except:
+            return 0
+
+    def calculate_macro_breakdown(per_100g):
+        """Calculate macronutrient percentages and categorization"""
+        try:
+            protein_g = per_100g.get("protein_g", 0)
+            fat_g = per_100g.get("total_fat_g", 0)
+            carbs_g = per_100g.get("carbs_g", 0)
+
+            calories_from_protein = protein_g * 4
+            calories_from_fat = fat_g * 9
+            calories_from_carbs = carbs_g * 4
+            total_calculated_kcal = (
+                calories_from_protein + calories_from_fat + calories_from_carbs
+            )
+
+            if total_calculated_kcal > 0:
+                pct_protein = (calories_from_protein / total_calculated_kcal) * 100
+                pct_fat = (calories_from_fat / total_calculated_kcal) * 100
+                pct_carbs = (calories_from_carbs / total_calculated_kcal) * 100
+
+                macro_categories = []
+                primary_macro = "balanced"
+
+                if pct_protein >= 40:
+                    macro_categories.append("high_protein")
+                    primary_macro = "high_protein"
+                if pct_fat >= 40:
+                    macro_categories.append("high_fat")
+                    primary_macro = "high_fat"
+                if pct_carbs >= 40:
+                    macro_categories.append("high_carb")
+                    primary_macro = "high_carb"
+
+                if len(macro_categories) > 1:
+                    max_pct = max(pct_protein, pct_fat, pct_carbs)
+                    if max_pct == pct_protein:
+                        primary_macro = "high_protein"
+                    elif max_pct == pct_fat:
+                        primary_macro = "high_fat"
+                    else:
+                        primary_macro = "high_carb"
+
+                return {
+                    "protein_percent": round(pct_protein, 1),
+                    "fat_percent": round(pct_fat, 1),
+                    "carbs_percent": round(pct_carbs, 1),
+                    "total_macro_kcal": round(total_calculated_kcal, 1),
+                    "calories_from_protein": round(calories_from_protein, 1),
+                    "calories_from_fat": round(calories_from_fat, 1),
+                    "calories_from_carbs": round(calories_from_carbs, 1),
+                    "macro_categories": macro_categories,
+                    "primary_macro_category": primary_macro,
+                    "is_high_protein": pct_protein >= 40,
+                    "is_high_fat": pct_fat >= 40,
+                    "is_high_carb": pct_carbs >= 40,
+                    "is_balanced": len(macro_categories) == 0,
+                }
+
+            return {
+                "protein_percent": 0,
+                "fat_percent": 0,
+                "carbs_percent": 0,
+                "total_macro_kcal": 0,
+                "calories_from_protein": 0,
+                "calories_from_fat": 0,
+                "calories_from_carbs": 0,
+                "macro_categories": [],
+                "primary_macro_category": "unknown",
+                "is_high_protein": False,
+                "is_high_fat": False,
+                "is_high_carb": False,
+                "is_balanced": False,
+            }
+        except Exception as e:
+            logger.warning(f"Error calculating macro breakdown: {str(e)}")
+            return {
+                "protein_percent": 0,
+                "fat_percent": 0,
+                "carbs_percent": 0,
+                "total_macro_kcal": 0,
+                "calories_from_protein": 0,
+                "calories_from_fat": 0,
+                "calories_from_carbs": 0,
+                "macro_categories": [],
+                "primary_macro_category": "unknown",
+                "is_high_protein": False,
+                "is_high_fat": False,
+                "is_high_carb": False,
+                "is_balanced": False,
+            }
+
+    try:
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+
+        # Get MongoDB connection
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+        branded_foods = db["branded_foods"]
+
+        logger.info("Creating enhanced indexes...")
+        # Create indexes with error handling to avoid conflicts
+        try:
+            # Basic indexes
+            branded_foods.create_index([("foodClass", pymongo.ASCENDING)])
+            branded_foods.create_index([("brandOwner", pymongo.ASCENDING)])
+            branded_foods.create_index([("foodCategory", pymongo.ASCENDING)])
+            branded_foods.create_index([("gtinUpc", pymongo.ASCENDING)])
+
+            # Create compound text index for search
+            branded_foods.create_index(
+                [("description", pymongo.TEXT), ("ingredients", pymongo.TEXT)],
+                name="search_text_index",
+            )
+
+            # Nutrition indexes
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.primary_macro_category",
+                        pymongo.ASCENDING,
+                    )
+                ]
+            )
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.is_high_protein",
+                        pymongo.ASCENDING,
+                    )
+                ]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_high_fat", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_high_carb", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_balanced", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.per_100g.protein_g", pymongo.DESCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.per_100g.energy_kcal", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.nutrition_density_score", pymongo.DESCENDING)]
+            )
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.protein_percent",
+                        pymongo.DESCENDING,
+                    )
+                ]
+            )
+
+            logger.info("All indexes created successfully")
+
+        except Exception as e:
+            logger.warning(
+                f"Some indexes may already exist or failed to create: {str(e)}"
+            )
+            # Continue with import even if some indexes fail
+
+        logger.info("Processing and inserting enhanced food data...")
+        batch = []
+        batch_size = 1000
+        total_processed = 0
+        enhanced_count = 0
+
+        # Use ijson to stream the JSON
+        with open(file_path, "rb") as f:
+            parser = ijson.items(f, "BrandedFoods.item")
+
+            for food in parser:
+                try:
+                    # Convert all Decimal values to float recursively
+                    food = convert_decimal_in_dict(food)
+
+                    # Add enhanced nutrition calculations
+                    food = calculate_per_100g_values(food)
+                    enhanced_count += 1
+
+                    batch.append(food)
+
+                    if len(batch) >= batch_size:
+                        try:
+                            branded_foods.insert_many(batch)
+                            total_processed += len(batch)
+                            logger.info(
+                                f"Processed {total_processed} foods... ({enhanced_count} enhanced)"
+                            )
+                        except Exception as e:
+                            logger.error(f"Error in batch: {str(e)}")
+                            raise HTTPException(
+                                status_code=500, detail=f"Import failed: {str(e)}"
+                            )
+                        batch = []
+
+                except Exception as e:
+                    logger.warning(f"Error processing food item: {str(e)}")
+                    # Still add the item without enhancement if calculation fails
+                    batch.append(food)
+
+            # Insert any remaining items
+            if batch:
+                try:
+                    branded_foods.insert_many(batch)
+                    total_processed += len(batch)
+                    logger.info(
+                        f"Final batch processed. Total: {total_processed} foods"
+                    )
+                except Exception as e:
+                    logger.error(f"Error in final batch: {str(e)}")
+                    raise HTTPException(
+                        status_code=500, detail=f"Import failed: {str(e)}"
+                    )
+
+        final_count = branded_foods.count_documents({})
+        enhanced_final_count = branded_foods.count_documents(
+            {"nutrition_enhanced": {"$exists": True}}
+        )
+        client.close()
+
+        logger.info("Enhanced data import completed successfully!")
+
+        return {
+            "status": "success",
+            "message": "USDA data imported successfully with enhanced nutrition calculations",
+            "total_documents_processed": total_processed,
+            "enhanced_documents": enhanced_final_count,
+            "final_document_count": final_count,
+            "enhancement_rate": (
+                f"{(enhanced_final_count/final_count)*100:.1f}%"
+                if final_count > 0
+                else "0%"
+            ),
+            "indexes_created": [
+                "foodClass",
+                "brandOwner",
+                "foodCategory",
+                "gtinUpc",
+                "search_text_index (description + ingredients)",
+                "nutrition_enhanced.macro_breakdown.primary_macro_category",
+                "nutrition_enhanced.macro_breakdown.is_high_protein",
+                "nutrition_enhanced.macro_breakdown.is_high_fat",
+                "nutrition_enhanced.macro_breakdown.is_high_carb",
+                "nutrition_enhanced.macro_breakdown.is_balanced",
+                "nutrition_enhanced.per_100g.protein_g (desc)",
+                "nutrition_enhanced.per_100g.energy_kcal (asc)",
+                "nutrition_enhanced.nutrition_density_score (desc)",
+                "nutrition_enhanced.macro_breakdown.protein_percent (desc)",
+            ],
+            "sample_enhanced_structure": {
+                "nutrition_enhanced": {
+                    "serving_info": {
+                        "serving_size_g": 15,
+                        "serving_description": "1 PAN FRIED SLICE",
+                        "multiplier_to_100g": 6.67,
+                    },
+                    "per_serving": {
+                        "energy_kcal": 90,
+                        "protein_g": 5,
+                        "total_fat_g": 7,
+                    },
+                    "per_100g": {
+                        "energy_kcal": 600,
+                        "protein_g": 33.3,
+                        "total_fat_g": 46.7,
+                    },
+                    "nutrition_density_score": 5.55,
+                    "macro_breakdown": {
+                        "protein_percent": 22.2,
+                        "fat_percent": 70.0,
+                        "carbs_percent": 0.0,
+                        "calories_from_protein": 133.2,
+                        "calories_from_fat": 420.3,
+                        "calories_from_carbs": 0.0,
+                        "primary_macro_category": "high_fat",
+                        "macro_categories": ["high_fat"],
+                        "is_high_protein": False,
+                        "is_high_fat": True,
+                        "is_high_carb": False,
+                        "is_balanced": False,
+                    },
+                }
+            },
+        }
+
+    except Exception as e:
+        logger.error(f"Error importing USDA data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to import USDA data: {str(e)}"
         )

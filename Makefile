@@ -1,6 +1,6 @@
 VERSION := 0.0.1
 BE_IMAGE_NAME := ai-fitness-planner-backend
-DOCKER_COMPOSE_FILE  := docker-compose-dev.yml 
+DOCKER_COMPOSE_FILE  := docker-compose.yml 
 FE_IMAGE_NAME := ai-fitness-planner-frontend
 
 up: 

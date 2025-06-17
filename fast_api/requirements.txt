@@ -31,3 +31,4 @@ duckduckgo-search==7.3.2
 langchain-anthropic==0.3.7
 langchain-google-genai==2.0.9
 schedule==1.2.0
+ijson==3.4.0
