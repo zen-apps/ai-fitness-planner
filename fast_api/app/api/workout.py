@@ -15,6 +15,12 @@ import os
 from pathlib import Path
 import time
 from tqdm import tqdm
+import json
+import ijson
+from decimal import Decimal
+from pymongo import MongoClient
+import pymongo
+
 from app.api.helpers.usda_branded_foods import (
     download_usda_branded_foods,
     verify_json_structure,
@@ -482,49 +488,6 @@ def get_mongo_client():
         client.admin.command("ping")  # Test connection
         return client
 
-
-# Add an endpoint to check if USDA data exists
-@workout.get("/check_usda_data/")
-async def check_usda_data():
-    """Check if USDA nutrition data exists in MongoDB"""
-    try:
-        client = get_mongo_client()
-        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-
-        # Check for branded foods collection
-        collections = db.list_collection_names()
-
-        if "branded_foods" in collections:
-            count = db.branded_foods.count_documents({})
-
-            # Get a sample document
-            sample = db.branded_foods.find_one()
-
-            client.close()
-
-            return {
-                "status": "data_exists",
-                "collection": "branded_foods",
-                "document_count": count,
-                "sample_fields": list(sample.keys()) if sample else [],
-                "message": f"Found {count:,} branded food documents",
-            }
-        else:
-            client.close()
-            return {
-                "status": "no_data",
-                "available_collections": collections,
-                "message": "No branded_foods collection found. You may need to import USDA data.",
-            }
-
-    except Exception as e:
-        logger.error(f"Error checking USDA data: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to check USDA data: {str(e)}"
-        )
-
-
-# Simple nutrition search endpoint to test functionality
 @workout.get("/search_nutrition/")
 async def search_nutrition(query: str = "coca cola", limit: int = 1):
     """Search nutrition data to test MongoDB functionality"""
@@ -545,58 +508,33 @@ async def search_nutrition(query: str = "coca cola", limit: int = 1):
         # Format results for display
         formatted_results = []
         for result in results:
-            """{
-              "status": "data_exists",
-              "collection": "branded_foods",
-              "document_count": 452998,
-              "sample_fields": [
-                "_id",
-                "foodClass",
-                "description",
-                "foodNutrients",
-                "foodAttributes",
-                "modifiedDate",
-                "availableDate",
-                "marketCountry",
-                "brandOwner",
-                "gtinUpc",
-                "dataSource",
-                "ingredients",
-                "servingSize",
-                "servingSizeUnit",
-                "householdServingFullText",
-                "labelNutrients",
-                "tradeChannels",
-                "microbes",
-                "brandedFoodCategory",
-                "dataType",
-                "fdcId",
-                "publicationDate",
-                "foodUpdateLog"
-              ],
-              "message": "Found 452,998 branded food documents"
-            }"""
             formatted_results.append(
                 {
-                    "description": result.get("description", ""),
-                    "brand": result.get("brandOwner", ""),
-                    "category": result.get("brandedFoodCategory", ""),
-                    "fdcId": result.get("fdcId", ""),
-                    "calories": result.get("labelNutrients", {})
-                    .get("calories", {})
-                    .get("value", 0),
-                    "foodClass": result.get("foodClass", ""),
-                    "foodNutrients": result.get("foodNutrients", []),
-                    "foodAttributes": result.get("foodAttributes", []),
-                    "ingredients": result.get("ingredients", ""),
-                    "servingSize": result.get("servingSize", None),
-                    "servingSizeUnit": result.get("servingSizeUnit", ""),
-                    "gtinUpc": result.get("gtinUpc", ""),
-                    "householdServingFullText": result.get(
-                        "householdServingFullText", ""
+                    "fdc_id": result.get("fdcId"),
+                    "description": result.get("description"),
+                    "brand_owner": result.get("brandOwner"),
+                    "brand_name": result.get("brandName"),
+                    "food_class": result.get("foodClass"),
+                    "food_category": result.get("foodCategory"),
+                    "gtin_upc": result.get("gtinUpc"),
+                    "ingredients": result.get("ingredients"),
+                    "serving_size": result.get("servingSize"),
+                    "serving_size_unit": result.get("servingSizeUnit"),
+                    "household_serving_fulltext": result.get(
+                        "householdServingFullText"
                     ),
-                    "labelNutrients": result.get("labelNutrients", {}),
-                    "dataSource": result.get("dataSource", ""),
+                    "modified_date": result.get("modifiedDate"),
+                    "available_date": result.get("availableDate"),
+                    "market_country": result.get("marketCountry"),
+                    "discontinued_date": result.get("discontinuedDate"),
+                    "preparation_state_code": result.get("preparationStateCode"),
+                    "trade_channel": result.get("tradeChannel"),
+                    "short_description": result.get("shortDescription"),
+                    "nutrition_enhanced": result.get("nutrition_enhanced", {}),
+                    "food_nutrients": result.get("foodNutrients", []),
+                    "food_attributes": result.get("foodAttributes", []),
+                    "food_attribute_types": result.get("foodAttributeTypes", []),
+                    "food_version_ids": result.get("foodVersionIds", []),
                 }
             )
 
@@ -661,20 +599,11 @@ async def get_database_stats():
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
 
 
-# josh
-
-
 @workout.post("/import_usda_data/")
 async def import_usda_data(
     file_path: str = "./fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json",
 ):
     """Import USDA Branded Foods data into MongoDB with enhanced nutrition calculations"""
-    import json
-    import ijson
-    from decimal import Decimal
-    from pymongo import MongoClient
-    import pymongo
-
     def convert_decimal_in_dict(d):
         """Recursively convert all Decimal values to float in a dictionary"""
         for k, v in d.items():
