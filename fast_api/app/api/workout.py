@@ -286,7 +286,7 @@ Total estimated audio length should match the workout duration: {workout_plan['t
         )
 
 
-@workout.get("/test_db/")
+@workout.get("/test_postgres_db/")
 async def test_db():
     """Test database connection with improved error handling"""
     import psycopg2
@@ -340,27 +340,163 @@ async def test_db():
     raise HTTPException(status_code=500, detail=error_msg)
 
 
-""" 
-if True:
-    json_file = download_usda_branded_foods()
+"""
+version: '3.3'
+
+services:
+  # Jupyter Notebook for AI/ML development
+  notebook_ai_fitness_planner:
+    restart: always
+    build: ./jupyter_notebook
+    ports:
+      - "1960:3839"
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+      - JUPYTER_PASSWORD_HASH=${JUPYTER_PASSWORD_HASH}
+      - MONGODB_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
+    command: jupyter lab --port=3839 --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.password="${JUPYTER_PASSWORD_HASH}"
+    networks:
+      - ai-fitness-network
+    depends_on:
+      - ai_fitness_planner_db
+      - mongodb_ai_fitness_planner
     
-    if json_file:
-        # Verify the file
-        verify_json_structure(json_file)
-        
-        print(f"\n🎉 Ready for import!")
-        print(f"Use this path in your MongoDB import script:")
-        print(f"'{json_file}'")
-        
-        # Clean up zip file option
-        zip_path = Path("./nutrition_data/branded_foods_2025_04.zip")
-        if zip_path.exists():
-            response = input("\n🗑️  Delete the ZIP file to save space? (y/n): ")
-            if response.lower() == 'y':
-                zip_path.unlink()
-                print("✅ ZIP file deleted")
-    else:
-        print("❌ Download failed - please check your internet connection and try again")
+  # PostgreSQL Database
+  ai_fitness_planner_db:
+    image: postgres:15-alpine
+    container_name: ai_fitness_planner_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "4553:5432"
+    volumes:
+      - db_data_ai_fitness_planner:/var/lib/postgresql/data
+    networks:
+      - ai-fitness-network
+      - sp-net
+  
+# MongoDB Database for USDA Nutrition Data
+  mongodb_ai_fitness_planner:
+    image: mongo:7.0
+    container_name: mongodb_ai_fitness_planner
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    ports:
+      - "27019:27017"  # Different port to avoid conflicts
+    volumes:
+      - mongodb_data_ai_fitness_planner:/data/db
+      - ./data/mongodb_init:/docker-entrypoint-initdb.d  # For init scripts
+    networks:
+      - ai-fitness-network
+      - sp-net
+
+  # Mongo Express for MongoDB management
+  mongo_express_ai_fitness_planner:
+    image: mongo-express:1.0.0
+    container_name: mongo_express_ai_fitness_planner
+    restart: always
+    ports:
+      - "8084:8081"  # Different port to avoid conflicts
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+    networks:
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - mongodb_ai_fitness_planner
+
+  # pgAdmin for database management
+  pgadmin_ai_fitness_planner:
+    container_name: pgadmin4_ai_fitness_planner
+    image: dpage/pgadmin4:latest
+    restart: always
+    volumes:
+      - pgadmin_ai_fitness_planner:/var/lib/pgadmin
+    env_file:
+      - .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "4053:80"
+    networks:
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - ai_fitness_planner_db
+
+  # FastAPI Backend
+  fast_api_ai_fitness_planner:
+    restart: always
+    build: 
+      context: ./fast_api
+      dockerfile: Dockerfile-dev
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    ports:
+      - "1015:8000"
+    command: ["--host", "0.0.0.0", "fast_api.app.main:app", "--reload"]
+    networks:  # ADD THIS SECTION
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - ai_fitness_planner_db
+      - mongodb_ai_fitness_planner
+
+  # Streamlit Frontend
+  streamlit_app_ai_fitness_planner:
+    build: 
+      context: ./streamlit
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    command: "streamlit run streamlit/🏠_home.py"
+    ports:
+      - "8526:8501"
+    volumes:
+      - ./streamlit:/usr/src/app
+    networks:
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - ai_fitness_planner_db
+      - mongodb_ai_fitness_planner
+
+# Named volumes for data persistence
+volumes:
+  db_data_ai_fitness_planner:
+    driver: local
+  pgadmin_ai_fitness_planner:
+    driver: local
+  mongodb_data_ai_fitness_planner:
+    driver: local
+
+# Networks
+networks:
+  ai-fitness-network:
+    driver: bridge
+  sp-net:
+    external: true
 """
 
 
@@ -390,3 +526,209 @@ async def load_usda_data():
         raise HTTPException(status_code=500, detail=error_msg)
     else:
         logger.info(f"JSON file found at path: {json_file}")
+
+
+# Fixed MongoDB connection test endpoint
+@workout.get("/test_mongo_db/")
+async def test_mongo_db():
+    """Test MongoDB connection with improved error handling"""
+    from pymongo import MongoClient, errors
+
+    mongo_user = os.getenv("MONGO_USER")
+    mongo_password = os.getenv("MONGO_PASSWORD")
+    mongo_db_name = os.getenv("MONGO_DB_NAME")
+
+    mongo_hosts_to_try = [
+        "mongodb_ai_fitness_planner",  # Docker service name
+        "localhost",  # If running locally
+    ]
+
+    for host in mongo_hosts_to_try:
+        try:
+            logger.info(f"Attempting to connect to MongoDB at host: {host}")
+
+            # Fixed URI format - connect to admin database for authentication
+            if host == "mongodb_ai_fitness_planner":
+                port = 27017  # Internal Docker port
+            else:
+                port = 27019  # External mapped port
+
+            mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{host}:{port}/admin"
+
+            logger.info(
+                f"Using MongoDB URI: mongodb://{mongo_user}:***@{host}:{port}/admin"
+            )
+
+            client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
+
+            # Test the connection
+            client.admin.command("ping")
+
+            # Access your specific database
+            db = client[mongo_db_name] if mongo_db_name else client["usda_nutrition"]
+            collection_names = db.list_collection_names()
+
+            # Test if we can access existing collections
+            existing_collections = []
+            for collection_name in collection_names[:5]:  # Limit to first 5
+                try:
+                    count = db[collection_name].count_documents({})
+                    existing_collections.append(
+                        {"name": collection_name, "document_count": count}
+                    )
+                except Exception as e:
+                    existing_collections.append(
+                        {"name": collection_name, "error": str(e)}
+                    )
+
+            client.close()
+
+            logger.info(f"Successfully connected to MongoDB at host: {host}")
+            return {
+                "status": "success",
+                "connected_host": host,
+                "port": port,
+                "database_name": mongo_db_name or "usda_nutrition",
+                "total_collections": len(collection_names),
+                "collections_sample": existing_collections,
+                "environment_vars": {
+                    "MONGO_USER": mongo_user,
+                    "MONGO_PASSWORD": "***" if mongo_password else None,
+                    "MONGO_DB_NAME": mongo_db_name,
+                },
+            }
+
+        except errors.ServerSelectionTimeoutError as err:
+            logger.warning(
+                f"Server selection timeout for MongoDB at host {host}: {str(err)}"
+            )
+            continue
+        except errors.OperationFailure as err:
+            logger.warning(
+                f"Authentication failed for MongoDB at host {host}: {str(err)}"
+            )
+            continue
+        except Exception as err:
+            logger.warning(
+                f"Unexpected error connecting to MongoDB at host {host}: {str(err)}"
+            )
+            continue
+
+    # If all hosts failed
+    error_msg = (
+        f"Failed to connect to MongoDB. Tried hosts: {', '.join(mongo_hosts_to_try)}"
+    )
+    logger.error(error_msg)
+    raise HTTPException(status_code=500, detail=error_msg)
+
+
+# Also add a simpler connection helper function
+def get_mongo_client():
+    """Get MongoDB client connection"""
+    from pymongo import MongoClient
+
+    mongo_user = os.getenv("MONGO_USER")
+    mongo_password = os.getenv("MONGO_PASSWORD")
+
+    # Try Docker service name first, then localhost
+    try:
+        # Docker internal connection
+        mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@mongodb_ai_fitness_planner:27017/admin"
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command("ping")  # Test connection
+        return client
+    except:
+        # Fallback to localhost
+        mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@localhost:27019/admin"
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command("ping")  # Test connection
+        return client
+
+
+# Add an endpoint to check if USDA data exists
+@workout.get("/check_usda_data/")
+async def check_usda_data():
+    """Check if USDA nutrition data exists in MongoDB"""
+    try:
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+
+        # Check for branded foods collection
+        collections = db.list_collection_names()
+
+        if "branded_foods" in collections:
+            count = db.branded_foods.count_documents({})
+
+            # Get a sample document
+            sample = db.branded_foods.find_one()
+
+            client.close()
+
+            return {
+                "status": "data_exists",
+                "collection": "branded_foods",
+                "document_count": count,
+                "sample_fields": list(sample.keys()) if sample else [],
+                "message": f"Found {count:,} branded food documents",
+            }
+        else:
+            client.close()
+            return {
+                "status": "no_data",
+                "available_collections": collections,
+                "message": "No branded_foods collection found. You may need to import USDA data.",
+            }
+
+    except Exception as e:
+        logger.error(f"Error checking USDA data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to check USDA data: {str(e)}"
+        )
+
+
+# Simple nutrition search endpoint to test functionality
+@workout.get("/search_nutrition/")
+async def search_nutrition(query: str = "coca cola", limit: int = 5):
+    """Search nutrition data to test MongoDB functionality"""
+    try:
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+
+        # Search by brand owner or description
+        search_query = {
+            "$or": [
+                {"brandOwner": {"$regex": query, "$options": "i"}},
+                {"description": {"$regex": query, "$options": "i"}},
+            ]
+        }
+
+        results = list(db.branded_foods.find(search_query).limit(limit))
+
+        # Format results for display
+        formatted_results = []
+        for result in results:
+            formatted_results.append(
+                {
+                    "description": result.get("description", ""),
+                    "brand": result.get("brandOwner", ""),
+                    "category": result.get("brandedFoodCategory", ""),
+                    "fdcId": result.get("fdcId", ""),
+                    "calories": result.get("labelNutrients", {})
+                    .get("calories", {})
+                    .get("value", 0),
+                }
+            )
+
+        client.close()
+
+        return {
+            "query": query,
+            "results_found": len(formatted_results),
+            "results": formatted_results,
+        }
+
+    except Exception as e:
+        logger.error(f"Error searching nutrition data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to search nutrition data: {str(e)}"
+        )
