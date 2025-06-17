@@ -9,9 +9,16 @@ from langchain_core.messages import HumanMessage
 import pandas as pd
 import re
 
-# Corrected imports for static file hosting
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+import requests
+import zipfile
+import os
+from pathlib import Path
+import time
+from tqdm import tqdm
+from app.api.helpers.usda_branded_foods import (
+    download_usda_branded_foods,
+    verify_json_structure,
+)
 
 # Set up logging with a more specific name
 logging.basicConfig(
@@ -279,159 +286,107 @@ Total estimated audio length should match the workout duration: {workout_plan['t
         )
 
 
-# connect to postgres database
-
-"""
-version: '3.3'
-
-services:
-  # Jupyter Notebook for AI/ML development
-  notebook_ai_fitness_planner:
-    restart: always
-    build: ./jupyter_notebook
-    ports:
-      - "1960:3839"
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    environment:
-      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
-      - JUPYTER_PASSWORD_HASH=${JUPYTER_PASSWORD_HASH}
-    command: jupyter lab --port=3839 --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.password="${JUPYTER_PASSWORD_HASH}"
-    networks:
-      - ai-fitness-network
-    depends_on:
-      - ai_fitness_planner_db
-    
-  # PostgreSQL Database
-  ai_fitness_planner_db:
-    image: postgres:15-alpine
-    container_name: ai_fitness_planner_db
-    restart: always
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "4553:5432"
-    volumes:
-      - db_data_ai_fitness_planner:/var/lib/postgresql/data
-    networks:
-      - ai-fitness-network
-      - sp-net
-      
-  # pgAdmin for database management
-  pgadmin_ai_fitness_planner:
-    container_name: pgadmin4_ai_fitness_planner
-    image: dpage/pgadmin4:latest
-    restart: always
-    volumes:
-      - pgadmin_ai_fitness_planner:/var/lib/pgadmin
-    env_file:
-      - .env
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    ports:
-      - "4053:80"
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-
-  # FastAPI Backend
-  fast_api_ai_fitness_planner:
-    restart: always
-    build: 
-      context: ./fast_api
-      dockerfile: Dockerfile-dev
-    env_file:
-      - .env
-    volumes:
-      - ./:/app
-    ports:
-      - "1015:8000"
-    command: ["--host", "0.0.0.0", "fast_api.app.main:app", "--reload"]
-    depends_on:
-      - ai_fitness_planner_db
-
-  # Streamlit Frontend
-  streamlit_app_ai_fitness_planner:
-    build: 
-      context: ./streamlit
-      dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - .env
-    command: "streamlit run streamlit/🏠_home.py"
-    ports:
-      - "8526:8501"
-    volumes:
-      - ./streamlit:/usr/src/app
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-
-# Named volumes for data persistence
-volumes:
-  db_data_ai_fitness_planner:
-    driver: local
-  pgadmin_ai_fitness_planner:
-    driver: local
-
-# Networks
-networks:
-  ai-fitness-network:
-    driver: bridge
-  sp-net:
-    external: true
-
-    (.venv) jjanzen@zen-general-vm:~/localfiles/ai-fitness-planner$ ls -la
-total 44
-drwxr-xr-x  6 jjanzen jjanzen 4096 Jun 17 01:03 .
-drwxr-xr-x 44 jjanzen jjanzen 4096 Jun 16 20:10 ..
--rw-r--r--  1 jjanzen jjanzen 1218 Jun 16 21:05 .env
-drwxr-xr-x  9 jjanzen jjanzen 4096 Jun 17 01:04 .git
--rw-r--r--  1 jjanzen jjanzen  767 Jun 17 01:03 .gitignore
--rw-r--r--  1 jjanzen jjanzen    0 Jun 16 20:16 CLAUDE.md
--rw-r--r--  1 jjanzen jjanzen  395 Jun 16 20:36 Makefile
--rw-r--r--  1 jjanzen jjanzen   20 Jun 16 20:04 README.md
--rw-r--r--  1 jjanzen jjanzen 2559 Jun 17 00:51 docker-compose-dev.yml
-drwxr-xr-x  3 jjanzen jjanzen 4096 Jun 17 16:39 fast_api
-drwxr-xr-x 11 jjanzen jjanzen 4096 Jun 16 20:15 jupyter_notebook
-drwxr-xr-x  4 jjanzen jjanzen 4096 Jun 16 20:16 streamlit
-"""
-
-
-@workout.get("test_db/")
+@workout.get("/test_db/")
 async def test_db():
-    """Test database connection"""
+    """Test database connection with improved error handling"""
     import psycopg2
     from psycopg2 import sql
 
-    try:
-        conn = psycopg2.connect(
-            dbname=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            host="ai_fitness_planner_db",
-            port=5432,
-        )
-        cursor = conn.cursor()
-        cursor.execute("SELECT version();")
-        db_version = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        return {"status": "success", "db_version": db_version}
-    except Exception as e:
-        logger.error(f"Database connection error: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Database connection failed: {str(e)}"
-        )
+    # Try different host configurations
+    hosts_to_try = [
+        "ai_fitness_planner_db",  # Docker service name
+        "localhost",  # If running locally
+        "127.0.0.1",  # Fallback
+    ]
+
+    for host in hosts_to_try:
+        try:
+            logger.info(f"Attempting to connect to database at host: {host}")
+
+            conn = psycopg2.connect(
+                dbname=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                host=host,
+                port=5432,
+                connect_timeout=10,
+            )
+
+            cursor = conn.cursor()
+            cursor.execute("SELECT version();")
+            db_version = cursor.fetchone()
+            cursor.close()
+            conn.close()
+
+            logger.info(f"Successfully connected to database at host: {host}")
+            return {
+                "status": "success",
+                "db_version": db_version,
+                "connected_host": host,
+                "environment_vars": {
+                    "DB_NAME": os.getenv("DB_NAME"),
+                    "DB_USER": os.getenv("DB_USER"),
+                    "DB_PASSWORD": "***" if os.getenv("DB_PASSWORD") else None,
+                },
+            }
+
+        except Exception as e:
+            logger.warning(f"Failed to connect to database at host {host}: {str(e)}")
+            continue
+
+    # If all hosts failed
+    error_msg = f"Failed to connect to database. Tried hosts: {', '.join(hosts_to_try)}"
+    logger.error(error_msg)
+    raise HTTPException(status_code=500, detail=error_msg)
+
+
+""" 
+if True:
+    json_file = download_usda_branded_foods()
+    
+    if json_file:
+        # Verify the file
+        verify_json_structure(json_file)
+        
+        print(f"\n🎉 Ready for import!")
+        print(f"Use this path in your MongoDB import script:")
+        print(f"'{json_file}'")
+        
+        # Clean up zip file option
+        zip_path = Path("./nutrition_data/branded_foods_2025_04.zip")
+        if zip_path.exists():
+            response = input("\n🗑️  Delete the ZIP file to save space? (y/n): ")
+            if response.lower() == 'y':
+                zip_path.unlink()
+                print("✅ ZIP file deleted")
+    else:
+        print("❌ Download failed - please check your internet connection and try again")
+"""
+
+
+@workout.get("/load_usda_data/")
+async def load_usda_data():
+    """Load USDA Branded Foods data into PostgreSQL database"""
+    import psycopg2
+    from psycopg2 import sql
+
+    # Step 1: Download and extract the USDA Branded Foods data
+    json_file = download_usda_branded_foods()
+    if not json_file:
+        error_msg = "Failed to download USDA Branded Foods data."
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+    # Step 2: Verify the JSON structure
+    if not verify_json_structure(json_file):
+        error_msg = "USDA Branded Foods JSON structure is invalid."
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+    # is the json file path valid return true or false
+    if not os.path.isfile(json_file):
+        error_msg = f"JSON file not found at path: {json_file}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    else:
+        logger.info(f"JSON file found at path: {json_file}")
