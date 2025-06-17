@@ -277,3 +277,161 @@ Total estimated audio length should match the workout duration: {workout_plan['t
         raise HTTPException(
             status_code=500, detail=f"Failed to generate audio script: {str(e)}"
         )
+
+
+# connect to postgres database
+
+"""
+version: '3.3'
+
+services:
+  # Jupyter Notebook for AI/ML development
+  notebook_ai_fitness_planner:
+    restart: always
+    build: ./jupyter_notebook
+    ports:
+      - "1960:3839"
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+      - JUPYTER_PASSWORD_HASH=${JUPYTER_PASSWORD_HASH}
+    command: jupyter lab --port=3839 --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.password="${JUPYTER_PASSWORD_HASH}"
+    networks:
+      - ai-fitness-network
+    depends_on:
+      - ai_fitness_planner_db
+    
+  # PostgreSQL Database
+  ai_fitness_planner_db:
+    image: postgres:15-alpine
+    container_name: ai_fitness_planner_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "4553:5432"
+    volumes:
+      - db_data_ai_fitness_planner:/var/lib/postgresql/data
+    networks:
+      - ai-fitness-network
+      - sp-net
+      
+  # pgAdmin for database management
+  pgadmin_ai_fitness_planner:
+    container_name: pgadmin4_ai_fitness_planner
+    image: dpage/pgadmin4:latest
+    restart: always
+    volumes:
+      - pgadmin_ai_fitness_planner:/var/lib/pgadmin
+    env_file:
+      - .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "4053:80"
+    networks:
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - ai_fitness_planner_db
+
+  # FastAPI Backend
+  fast_api_ai_fitness_planner:
+    restart: always
+    build: 
+      context: ./fast_api
+      dockerfile: Dockerfile-dev
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    ports:
+      - "1015:8000"
+    command: ["--host", "0.0.0.0", "fast_api.app.main:app", "--reload"]
+    depends_on:
+      - ai_fitness_planner_db
+
+  # Streamlit Frontend
+  streamlit_app_ai_fitness_planner:
+    build: 
+      context: ./streamlit
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    command: "streamlit run streamlit/🏠_home.py"
+    ports:
+      - "8526:8501"
+    volumes:
+      - ./streamlit:/usr/src/app
+    networks:
+      - ai-fitness-network
+      - sp-net
+    depends_on:
+      - ai_fitness_planner_db
+
+# Named volumes for data persistence
+volumes:
+  db_data_ai_fitness_planner:
+    driver: local
+  pgadmin_ai_fitness_planner:
+    driver: local
+
+# Networks
+networks:
+  ai-fitness-network:
+    driver: bridge
+  sp-net:
+    external: true
+
+    (.venv) jjanzen@zen-general-vm:~/localfiles/ai-fitness-planner$ ls -la
+total 44
+drwxr-xr-x  6 jjanzen jjanzen 4096 Jun 17 01:03 .
+drwxr-xr-x 44 jjanzen jjanzen 4096 Jun 16 20:10 ..
+-rw-r--r--  1 jjanzen jjanzen 1218 Jun 16 21:05 .env
+drwxr-xr-x  9 jjanzen jjanzen 4096 Jun 17 01:04 .git
+-rw-r--r--  1 jjanzen jjanzen  767 Jun 17 01:03 .gitignore
+-rw-r--r--  1 jjanzen jjanzen    0 Jun 16 20:16 CLAUDE.md
+-rw-r--r--  1 jjanzen jjanzen  395 Jun 16 20:36 Makefile
+-rw-r--r--  1 jjanzen jjanzen   20 Jun 16 20:04 README.md
+-rw-r--r--  1 jjanzen jjanzen 2559 Jun 17 00:51 docker-compose-dev.yml
+drwxr-xr-x  3 jjanzen jjanzen 4096 Jun 17 16:39 fast_api
+drwxr-xr-x 11 jjanzen jjanzen 4096 Jun 16 20:15 jupyter_notebook
+drwxr-xr-x  4 jjanzen jjanzen 4096 Jun 16 20:16 streamlit
+"""
+
+
+@workout.get("test_db/")
+async def test_db():
+    """Test database connection"""
+    import psycopg2
+    from psycopg2 import sql
+
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host="ai_fitness_planner_db",
+            port=5432,
+        )
+        cursor = conn.cursor()
+        cursor.execute("SELECT version();")
+        db_version = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return {"status": "success", "db_version": db_version}
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database connection failed: {str(e)}"
+        )

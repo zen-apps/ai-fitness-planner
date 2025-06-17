@@ -27,17 +27,15 @@ if environment == "dev":
 else:
     sys.path.append("fast_api")
 
-from app.api.genai import genai
-from app.api.demo_ai_tools import demo_ai_tools
 from app.api.workout import workout
 from app.api.web import web
 
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
-    title="AI Clone API",
+    title="AI Fitness Planner API",
     version="1.0",
-    description="Your AI Clone API",
+    description="== AI Fitness Planner API ==",
 )
 
 # Mount static files at root level
@@ -47,17 +45,6 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 login = APIRouter()
 
-app.include_router(
-    genai,
-    prefix="/v1/genai",
-    tags=["genai"],
-)
-
-app.include_router(
-    demo_ai_tools,
-    prefix="/v1/demo_ai_tools",
-    tags=["demo_ai_tools"],
-)
 
 app.include_router(
     workout,

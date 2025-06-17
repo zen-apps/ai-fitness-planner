@@ -64,7 +64,7 @@ def main():
 
     # Main header
     st.markdown(
-        '<h1 class="main-header">🚀 Data Science App Demos</h1>', unsafe_allow_html=True
+        '<h1 class="main-header">🚀 AI Fitness Planner</h1>', unsafe_allow_html=True
     )
     st.markdown(
         '<p class="subtitle">Explore cutting-edge demo AI and Data Science applications</p>',
