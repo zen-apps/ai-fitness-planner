@@ -9,23 +9,23 @@ load data into mongo
 search by product 
 @workout.get("/search_nutrition/")
 {
-  "query": "coca",
+  "query": "black label",
   "results_found": 1,
   "results": [
     {
-      "fdc_id": 653612,
-      "description": "COCA-COLA WITH CHERRY FLAVOR, CHERRY",
-      "brand_owner": "COKE CHERRY",
-      "brand_name": null,
+      "fdc_id": 2070292,
+      "description": "HORMEL, BLACK LABEL, BROWN SUGAR THICK CUT BACON",
+      "brand_owner": "Hormel Foods Corporation ",
+      "brand_name": "HORMEL",
       "food_class": "Branded",
       "food_category": null,
-      "gtin_upc": "04915001",
-      "ingredients": "CARBONATED WATER, HIGH FRUCTOSE CORN SYRUP, CARAMEL COLOR, PHOSPHORIC ACID, NATURAL FLAVORS, CAFFEINE",
-      "serving_size": 253,
-      "serving_size_unit": "ml",
-      "household_serving_fulltext": "8.55 OZA",
-      "modified_date": "10/3/2019",
-      "available_date": "10/3/2019",
+      "gtin_upc": "037600314060",
+      "ingredients": "CURED WITH WATER, SALT, BROWN SUGAR, SODIUM PHOSPHATE, SODIUM ERYTHORBATE, NATURAL FLAVOR (WATER, NATURAL FLAVORS), SODIUM NITRITE.",
+      "serving_size": 24,
+      "serving_size_unit": "g",
+      "household_serving_fulltext": "2 PAN-FRIED SLICES",
+      "modified_date": "7/11/2020",
+      "available_date": "7/11/2020",
       "market_country": "United States",
       "discontinued_date": null,
       "preparation_state_code": null,
@@ -33,65 +33,69 @@ search by product
       "short_description": null,
       "nutrition_enhanced": {
         "serving_info": {
-          "serving_size_g": 253,
-          "serving_description": "8.55 OZA",
-          "multiplier_to_100g": 0.3953
+          "serving_size_g": 24,
+          "serving_description": "2 PAN-FRIED SLICES",
+          "multiplier_to_100g": 4.1667
         },
         "per_serving": {
-          "energy_kcal": 43,
-          "protein_g": 0,
-          "total_fat_g": 0,
-          "carbs_g": 11.9,
+          "energy_kcal": 458,
+          "protein_g": 33.3,
+          "total_fat_g": 33.3,
+          "carbs_g": 4.17,
           "fiber_g": 0,
-          "sugars_g": 11.9,
-          "sodium_mg": 10,
-          "cholesterol_mg": 0,
-          "saturated_fat_g": 0,
+          "sugars_g": 4.17,
+          "sodium_mg": 1960,
+          "cholesterol_mg": 104,
+          "saturated_fat_g": 12.5,
           "trans_fat_g": 0
         },
         "per_100g": {
-          "energy_kcal": 17,
-          "protein_g": 0,
-          "total_fat_g": 0,
-          "carbs_g": 4.7,
+          "energy_kcal": 1908.33,
+          "protein_g": 138.75,
+          "total_fat_g": 138.75,
+          "carbs_g": 17.38,
           "fiber_g": 0,
-          "sugars_g": 4.7,
-          "sodium_mg": 3.95,
-          "cholesterol_mg": 0,
-          "saturated_fat_g": 0,
+          "sugars_g": 17.38,
+          "sodium_mg": 8166.67,
+          "cholesterol_mg": 433.33,
+          "saturated_fat_g": 52.08,
           "trans_fat_g": 0
         },
         "label_nutrients_enhanced": {
-          "calories": 109,
-          "fat_g": 0,
-          "sodium_mg": 25.3,
-          "carbs_g": 30.1,
-          "sugars_g": 30.1,
-          "protein_g": 0
+          "calories": 110,
+          "fat_g": 7.99,
+          "saturated_fat_g": 3,
+          "trans_fat_g": 0,
+          "cholesterol_mg": 25,
+          "sodium_mg": 470,
+          "carbs_g": 1,
+          "fiber_g": 0,
+          "sugars_g": 1,
+          "protein_g": 7.99
         },
-        "nutrition_density_score": 0,
+        "nutrition_density_score": 7.27,
         "macro_breakdown": {
-          "protein_percent": 0,
-          "fat_percent": 0,
-          "carbs_percent": 100,
-          "total_macro_kcal": 18.8,
-          "calories_from_protein": 0,
-          "calories_from_fat": 0,
-          "calories_from_carbs": 18.8,
+          "protein_percent": 29.6,
+          "fat_percent": 66.7,
+          "carbs_percent": 3.7,
+          "total_macro_kcal": 1873.3,
+          "calories_from_protein": 555,
+          "calories_from_fat": 1248.8,
+          "calories_from_carbs": 69.5,
           "macro_categories": [
-            "high_carb"
+            "high_fat"
           ],
-          "primary_macro_category": "high_carb",
+          "primary_macro_category": "high_fat",
           "is_high_protein": false,
-          "is_high_fat": false,
-          "is_high_carb": true,
+          "is_high_fat": true,
+          "is_high_carb": false,
           "is_balanced": false
         }
       },
       "food_nutrients": [
         {
           "type": "FoodNutrient",
-          "id": 7095744,
+          "id": 25472934,
           "nutrient": {
             "id": 1003,
             "number": "203",
@@ -108,11 +112,11 @@ search by product
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 0
+          "amount": 33.3
         },
         {
           "type": "FoodNutrient",
-          "id": 7095746,
+          "id": 25472935,
           "nutrient": {
             "id": 1004,
             "number": "204",
@@ -121,19 +125,19 @@ search by product
             "unitName": "g"
           },
           "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
+            "code": "LCCS",
+            "description": "Calculated from value per serving size measure",
             "foodNutrientSource": {
               "id": 9,
               "code": "12",
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 0
+          "amount": 33.3
         },
         {
           "type": "FoodNutrient",
-          "id": 7095748,
+          "id": 25472936,
           "nutrient": {
             "id": 1005,
             "number": "205",
@@ -150,11 +154,11 @@ search by product
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 11.9
+          "amount": 4.17
         },
         {
           "type": "FoodNutrient",
-          "id": 7095750,
+          "id": 25472937,
           "nutrient": {
             "id": 1008,
             "number": "208",
@@ -171,11 +175,11 @@ search by product
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 43
+          "amount": 458
         },
         {
           "type": "FoodNutrient",
-          "id": 7095752,
+          "id": 25472938,
           "nutrient": {
             "id": 2000,
             "number": "269",
@@ -192,11 +196,74 @@ search by product
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 11.9
+          "amount": 4.17
         },
         {
           "type": "FoodNutrient",
-          "id": 7095754,
+          "id": 25472939,
+          "nutrient": {
+            "id": 1079,
+            "number": "291",
+            "name": "Fiber, total dietary",
+            "rank": 1200,
+            "unitName": "g"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCD",
+            "description": "Calculated from a daily value percentage per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472940,
+          "nutrient": {
+            "id": 1087,
+            "number": "301",
+            "name": "Calcium, Ca",
+            "rank": 5300,
+            "unitName": "mg"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCD",
+            "description": "Calculated from a daily value percentage per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472941,
+          "nutrient": {
+            "id": 1089,
+            "number": "303",
+            "name": "Iron, Fe",
+            "rank": 5400,
+            "unitName": "mg"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCD",
+            "description": "Calculated from a daily value percentage per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472942,
           "nutrient": {
             "id": 1093,
             "number": "307",
@@ -213,57 +280,117 @@ search by product
               "description": "Manufacturer's analytical; partial documentation"
             }
           },
-          "amount": 10
-        }
-      ],
-      "food_attributes": [
+          "amount": 1960
+        },
         {
-          "id": 115276,
-          "name": "Description",
-          "value": "2",
-          "foodAttributeType": {
-            "id": 998,
-            "name": "Update Log",
-            "description": "Changes that were made to this food"
-          }
+          "type": "FoodNutrient",
+          "id": 25472943,
+          "nutrient": {
+            "id": 1104,
+            "number": "318",
+            "name": "Vitamin A, IU",
+            "rank": 7500,
+            "unitName": "IU"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCD",
+            "description": "Calculated from a daily value percentage per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472944,
+          "nutrient": {
+            "id": 1162,
+            "number": "401",
+            "name": "Vitamin C, total ascorbic acid",
+            "rank": 6300,
+            "unitName": "mg"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCD",
+            "description": "Calculated from a daily value percentage per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472945,
+          "nutrient": {
+            "id": 1253,
+            "number": "601",
+            "name": "Cholesterol",
+            "rank": 15700,
+            "unitName": "mg"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCS",
+            "description": "Calculated from value per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 104
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472946,
+          "nutrient": {
+            "id": 1257,
+            "number": "605",
+            "name": "Fatty acids, total trans",
+            "rank": 15400,
+            "unitName": "g"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCS",
+            "description": "Calculated from value per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 25472947,
+          "nutrient": {
+            "id": 1258,
+            "number": "606",
+            "name": "Fatty acids, total saturated",
+            "rank": 9700,
+            "unitName": "g"
+          },
+          "foodNutrientDerivation": {
+            "code": "LCCS",
+            "description": "Calculated from value per serving size measure",
+            "foodNutrientSource": {
+              "id": 9,
+              "code": "12",
+              "description": "Manufacturer's analytical; partial documentation"
+            }
+          },
+          "amount": 12.5
         }
       ],
+      "food_attributes": [],
       "food_attribute_types": [],
       "food_version_ids": []
     }
   ]
-}
-
-returns doc count and fields 
-@workout.get("/check_usda_data/")
-{
-  "status": "data_exists",
-  "collection": "branded_foods",
-  "document_count": 452998,
-  "sample_fields": [
-    "_id",
-    "foodClass",
-    "description",
-    "foodNutrients",
-    "foodAttributes",
-    "modifiedDate",
-    "availableDate",
-    "marketCountry",
-    "brandOwner",
-    "gtinUpc",
-    "dataSource",
-    "ingredients",
-    "servingSize",
-    "servingSizeUnit",
-    "householdServingFullText",
-    "labelNutrients",
-    "tradeChannels",
-    "microbes",
-    "brandedFoodCategory",
-    "dataType",
-    "fdcId",
-    "publicationDate",
-    "foodUpdateLog"
-  ],
-  "message": "Found 452,998 branded food documents"
 }
