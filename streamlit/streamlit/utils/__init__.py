@@ -1,0 +1,1 @@
+# Utils module for AI Fitness Planner Streamlit app

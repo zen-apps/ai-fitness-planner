@@ -40,7 +40,7 @@ Uses LangChain RAG or tool calls to retrieve suitable meals per user macros/pref
 Can generate plans for a day or a week.
 
 
-Prompt example: “Create a 2,800-calorie day with 40% carbs, 30% protein, 30% fat. Avoid dairy.”
+Prompt example: "Create a 2,800-calorie day with 40% carbs, 30% protein, 30% fat. Avoid dairy."
 
 3. Workout Generator Agent
 Tailors based on training style: strength, hypertrophy, mobility, etc.
@@ -77,7 +77,7 @@ graph TD
 Combines output into a presentable plan.
 
 
-Adds guidance: “Eat meals 1 and 2 pre-workout”, or “Increase protein 10% next week.”
+Adds guidance: "Eat meals 1 and 2 pre-workout", or "Increase protein 10% next week."
 
 
 Could use LangChain Output Parsers for structure.
@@ -86,7 +86,7 @@ Could use LangChain Output Parsers for structure.
 
 🧪 Advanced Features to Impress LangChain
 Feature
-Why It’s Valuable
+Why It's Valuable
 ✅ LangGraph orchestration
 Shows you understand structured agent design.
 ✅ Tool usage (e.g., food DB)
@@ -167,7 +167,7 @@ Combine with Atlas Search for text-based filtering.
 
 
 📈 2. Optimize for Scale
-Chunked Ingestion: Don’t load the entire dataset in one go; use ETL batching and background jobs via FastAPI.
+Chunked Ingestion: Don't load the entire dataset in one go; use ETL batching and background jobs via FastAPI.
 
 
 Cache Layer: Use Redis or SQLite for frequent queries (e.g., most-searched foods).
@@ -206,3 +206,5 @@ Consider st.cache_data or st.experimental_memo for query results.
 Use Postgres + pgvector for primary storage and retrieval, with a background job to preprocess and store embeddings. Use FastAPI to serve filtered/query results to Streamlit, and run LangGraph agents to personalize and adapt meal/workout plans over time.
 Let me know if you want a sample architecture diagram or code scaffolding to get started.
 
+MEMORY NOTE:
+- do not try and work with this data: /home/jjanzen/localfiles/ai-fitness-planner/fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json
