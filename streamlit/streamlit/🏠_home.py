@@ -17,18 +17,67 @@ st.set_page_config(
 from dotenv import load_dotenv
 import os
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+# Load environment variables
+load_dotenv("config/dev.env")
+
+# Set API base URL with proper fallbacks
+API_BASE_URL = (
+    os.getenv("API_BASE_URL") or os.getenv("BACKEND_HOST") or "http://localhost:8000"
+)
+
+# Clean up the URL - remove quotes and trailing slash
+API_BASE_URL = API_BASE_URL.strip("\"'").rstrip("/")
+
+# Ensure we have a proper protocol
+if not API_BASE_URL.startswith(("http://", "https://")):
+    API_BASE_URL = f"http://{API_BASE_URL}"
+
+# This will be updated in the sidebar after session state is initialized
+st.write(f"Default API Base URL: {API_BASE_URL}")
 
 
 class FitnessAPI:
     """Client for interacting with FastAPI backend"""
 
     @staticmethod
+    def get_api_url() -> str:
+        """Get the current API URL (with override support)"""
+        return st.session_state.get("api_url_override", API_BASE_URL)
+
+    @staticmethod
+    def test_connection() -> Dict[str, Any]:
+        """Test if the API is reachable"""
+        api_url = FitnessAPI.get_api_url()
+        try:
+            response = requests.get(f"{api_url}/docs#/", timeout=10)
+            return {
+                "success": response.status_code == 200,
+                "status_code": response.status_code,
+                "url": f"{api_url}/docs#/",
+                "error": None,
+            }
+        except requests.exceptions.ConnectTimeout:
+            return {
+                "success": False,
+                "error": "Connection timeout",
+                "url": f"{api_url}/docs#/",
+            }
+        except requests.exceptions.ConnectionError:
+            return {
+                "success": False,
+                "error": "Connection refused",
+                "url": f"{api_url}/docs#/",
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e), "url": f"{api_url}/docs#/"}
+
+    @staticmethod
     def create_profile(profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create or update user profile"""
+        api_url = FitnessAPI.get_api_url()
         try:
             response = requests.post(
-                f"{API_BASE_URL}/v1/agents/profile/", json=profile_data, timeout=30
+                f"{api_url}/v1/agents/profile/", json=profile_data, timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -39,9 +88,10 @@ class FitnessAPI:
     @staticmethod
     def get_profile(user_id: str) -> Dict[str, Any]:
         """Get user profile"""
+        api_url = FitnessAPI.get_api_url()
         try:
             response = requests.get(
-                f"{API_BASE_URL}/v1/agents/profile/{user_id}", timeout=30
+                f"{api_url}/v1/agents/profile/{user_id}", timeout=30
             )
             if response.status_code == 404:
                 return {}
@@ -56,6 +106,7 @@ class FitnessAPI:
         user_id: str, meal_days: int = 7, workout_days: int = 3
     ) -> Dict[str, Any]:
         """Generate complete fitness plan"""
+        api_url = FitnessAPI.get_api_url()
         try:
             params = {
                 "user_id": user_id,
@@ -68,7 +119,7 @@ class FitnessAPI:
             }
 
             response = requests.post(
-                f"{API_BASE_URL}/v1/agents/complete-plan/", json=params, timeout=60
+                f"{api_url}/v1/agents/complete-plan/", json=params, timeout=60
             )
             response.raise_for_status()
             return response.json()
@@ -77,13 +128,41 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def search_nutrition(query: str, limit: int = 5) -> Dict[str, Any]:
-        """Search nutrition database"""
+    def generate_langgraph_plan(
+        user_id: str, meal_days: int = 7, workout_days: int = 3
+    ) -> Dict[str, Any]:
+        """Generate fitness plan using LangGraph workflow"""
+        api_url = FitnessAPI.get_api_url()
         try:
-            params = {"query": query, "limit": limit}
-            response = requests.get(
-                f"{API_BASE_URL}/v1/nutrition/search_nutrition/",
-                params=params,
+            request_data = {
+                "user_id": user_id,
+                "generate_meal_plan": True,
+                "generate_workout_plan": True,
+                "days": meal_days,
+                "meal_preferences": {"days": meal_days, "meal_count": 3},
+                "workout_preferences": {"days_per_week": workout_days},
+            }
+
+            response = requests.post(
+                f"{api_url}/v1/langgraph/generate-fitness-plan/",
+                json=request_data,
+                timeout=90,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error generating LangGraph plan: {str(e)}")
+            return {}
+
+    @staticmethod
+    def search_nutrition(query: str, limit: int = 5) -> Dict[str, Any]:
+        """Search nutrition database using vector search"""
+        api_url = FitnessAPI.get_api_url()
+        try:
+            request_data = {"query": query, "limit": limit, "similarity_threshold": 0.6}
+            response = requests.post(
+                f"{api_url}/v1/nutrition_search/search_nutrition_semantic/",
+                json=request_data,
                 timeout=30,
             )
             response.raise_for_status()
@@ -108,6 +187,24 @@ def main():
     # Sidebar for navigation
     with st.sidebar:
         st.title("Navigation")
+
+        # API URL override for testing
+        with st.expander("🔧 API Settings"):
+            if "api_url_override" not in st.session_state:
+                st.session_state.api_url_override = API_BASE_URL
+
+            new_url = st.text_input(
+                "Override API URL:", value=st.session_state.api_url_override
+            )
+            if st.button("Update URL"):
+                st.session_state.api_url_override = new_url.strip().rstrip("/")
+                st.success("URL updated!")
+                st.rerun()
+
+        # Show current API URL
+        current_url = FitnessAPI.get_api_url()
+        st.write(f"🔗 **Current URL:** {current_url}")
+
         page = st.selectbox(
             "Choose a page:",
             [
@@ -117,6 +214,7 @@ def main():
                 "💪 Workout Plans",
                 "📊 Complete Plan",
                 "🔍 Food Search",
+                "🧪 API Testing",
             ],
         )
 
@@ -133,6 +231,8 @@ def main():
         show_complete_plan_page()
     elif page == "🔍 Food Search":
         show_food_search_page()
+    elif page == "🧪 API Testing":
+        show_api_testing_page()
 
 
 def show_home_page():
@@ -188,6 +288,30 @@ def show_profile_page():
     """Profile setup page"""
     st.header("👤 User Profile Setup")
     st.markdown("Let's create your personalized fitness profile!")
+
+    # Test API connection first
+    current_api_url = FitnessAPI.get_api_url()
+    connection_test = FitnessAPI.test_connection()
+    if not connection_test["success"]:
+        st.error(f"❌ Cannot connect to API at {current_api_url}")
+        st.write(f"**Error:** {connection_test.get('error', 'Unknown error')}")
+        st.write(f"**Attempted URL:** {connection_test.get('url', 'N/A')}")
+
+        st.markdown(
+            """
+        **Troubleshooting:**
+        1. Make sure the FastAPI server is running on the correct port
+        2. Check if the API URL is correct (use the API Settings in sidebar)
+        3. Verify network connectivity
+        4. Try the API Testing page for more details
+        """
+        )
+
+        if st.button("🔄 Retry Connection"):
+            st.rerun()
+        return
+    else:
+        st.success(f"✅ Connected to API at {current_api_url}")
 
     # Check if profile exists
     existing_profile = FitnessAPI.get_profile(st.session_state.user_id)
@@ -426,70 +550,107 @@ def show_complete_plan_page():
             "Workout Days per Week", [2, 3, 4, 5], index=1
         )
 
+    # Plan generation options
+    st.subheader("🤖 AI Generation Method")
+    generation_method = st.radio(
+        "Choose generation method:",
+        ["🔗 LangGraph Workflow (Recommended)", "🧠 Individual Agents"],
+        help="LangGraph provides better coordination between agents",
+    )
+
     # Generate button
     if st.button("🚀 Generate Complete Plan", use_container_width=True, type="primary"):
-        with st.spinner("🤖 AI Agents are creating your personalized plan..."):
-            result = FitnessAPI.generate_complete_plan(
-                st.session_state.user_id, meal_plan_days, workout_days_per_week
-            )
+        if generation_method.startswith("🔗"):
+            with st.spinner("🤖 LangGraph workflow is orchestrating your plan..."):
+                # Show progress steps
+                progress_bar = st.progress(0)
+                status_text = st.empty()
 
-            if result:
-                st.success("✅ Your complete fitness plan is ready!")
+                status_text.text("🔄 Initializing workflow...")
+                progress_bar.progress(20)
 
-                # Display the summary
-                if result.get("summary"):
-                    st.subheader("🎯 Your Personalized Plan Summary")
-                    st.markdown(result["summary"])
+                result = FitnessAPI.generate_langgraph_plan(
+                    st.session_state.user_id, meal_plan_days, workout_days_per_week
+                )
 
-                # Meal Plan Section
-                if result.get("meal_plan"):
-                    st.subheader("🍽️ Meal Plan")
-                    meal_plan = result["meal_plan"]
+                if result:
+                    status_text.text("✅ Workflow completed!")
+                    progress_bar.progress(100)
+        else:
+            with st.spinner("🤖 AI Agents are creating your personalized plan..."):
+                result = FitnessAPI.generate_complete_plan(
+                    st.session_state.user_id, meal_plan_days, workout_days_per_week
+                )
 
-                    if meal_plan.get("target_macros"):
-                        st.markdown("**Daily Targets:**")
+        if result:
+            st.success("✅ Your complete fitness plan is ready!")
 
-                        col1, col2, col3, col4 = st.columns(4)
+            # Show workflow execution steps for LangGraph
+            if generation_method.startswith("🔗") and result.get("execution_steps"):
+                with st.expander("🔍 Workflow Execution Steps", expanded=False):
+                    for i, step in enumerate(result["execution_steps"], 1):
+                        st.write(f"{i}. {step}")
 
-                        macros = meal_plan["target_macros"]
-                        with col1:
-                            st.metric("Calories", f"{macros.get('calories', 0):,}")
-                        with col2:
-                            st.metric("Protein", f"{macros.get('protein_g', 0)}g")
-                        with col3:
-                            st.metric("Carbs", f"{macros.get('carbs_g', 0)}g")
-                        with col4:
-                            st.metric("Fat", f"{macros.get('fat_g', 0)}g")
+            # Show any errors
+            if result.get("errors"):
+                st.warning("⚠️ Some issues occurred during generation:")
+                for error in result["errors"]:
+                    st.write(f"- {error}")
 
-                    if meal_plan.get("plan_content"):
-                        with st.expander("📋 Detailed Meal Plan", expanded=True):
-                            st.markdown(meal_plan["plan_content"])
+            # Display the summary
+            if result.get("summary"):
+                st.subheader("🎯 Your Personalized Plan Summary")
+                st.markdown(result["summary"])
 
-                # Workout Plan Section
-                if result.get("workout_plan"):
-                    st.subheader("💪 Workout Plan")
-                    workout_plan = result["workout_plan"]
+            # Meal Plan Section
+            if result.get("meal_plan"):
+                st.subheader("🍽️ Meal Plan")
+                meal_plan = result["meal_plan"]
 
-                    col1, col2, col3 = st.columns(3)
+                if meal_plan.get("target_macros"):
+                    st.markdown("**Daily Targets:**")
 
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    macros = meal_plan["target_macros"]
                     with col1:
-                        st.metric(
-                            "Training Style", workout_plan.get("training_style", "N/A")
-                        )
+                        st.metric("Calories", f"{macros.get('calories', 0):,}")
                     with col2:
-                        st.metric("Split Type", workout_plan.get("split_type", "N/A"))
+                        st.metric("Protein", f"{macros.get('protein_g', 0)}g")
                     with col3:
-                        st.metric("Days/Week", workout_plan.get("days_per_week", "N/A"))
+                        st.metric("Carbs", f"{macros.get('carbs_g', 0)}g")
+                    with col4:
+                        st.metric("Fat", f"{macros.get('fat_g', 0)}g")
 
-                    if workout_plan.get("plan_content"):
-                        with st.expander("🏋️‍♂️ Detailed Workout Plan", expanded=True):
-                            st.markdown(workout_plan["plan_content"])
+                if meal_plan.get("plan_content"):
+                    with st.expander("📋 Detailed Meal Plan", expanded=True):
+                        st.markdown(meal_plan["plan_content"])
 
-                # Plan metadata
-                if result.get("generated_at"):
-                    st.caption(f"Plan generated on: {result['generated_at']}")
+            # Workout Plan Section
+            if result.get("workout_plan"):
+                st.subheader("💪 Workout Plan")
+                workout_plan = result["workout_plan"]
 
-                st.balloons()
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric(
+                        "Training Style", workout_plan.get("training_style", "N/A")
+                    )
+                with col2:
+                    st.metric("Split Type", workout_plan.get("split_type", "N/A"))
+                with col3:
+                    st.metric("Days/Week", workout_plan.get("days_per_week", "N/A"))
+
+                if workout_plan.get("plan_content"):
+                    with st.expander("🏋️‍♂️ Detailed Workout Plan", expanded=True):
+                        st.markdown(workout_plan["plan_content"])
+
+            # Plan metadata
+            if result.get("generated_at"):
+                st.caption(f"Plan generated on: {result['generated_at']}")
+
+            st.balloons()
 
 
 def show_food_search_page():
@@ -577,6 +738,131 @@ def show_food_search_page():
                                 st.warning("Nutrition data not available")
             else:
                 st.warning("No results found. Try a different search term!")
+
+
+def show_api_testing_page():
+    """API testing and debugging page"""
+    st.header("🧪 API Testing & Debugging")
+    st.markdown("Test all API endpoints and troubleshoot connection issues.")
+
+    # Connection status
+    st.subheader("🔗 Connection Status")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        current_url = FitnessAPI.get_api_url()
+        st.code(f"API Base URL: {current_url}")
+
+    with col2:
+        if st.button("🧪 Test Connection"):
+            with st.spinner("Testing connection..."):
+                result = FitnessAPI.test_connection()
+                if result["success"]:
+                    st.success("✅ API connection successful!")
+                    st.write(f"Status Code: {result.get('status_code', 'N/A')}")
+                else:
+                    st.error("❌ API connection failed!")
+                    st.write(f"Error: {result.get('error', 'Unknown')}")
+                    st.write(f"URL: {result.get('url', 'N/A')}")
+
+    # Quick URL tests
+    st.subheader("🔍 Quick URL Tests")
+    test_urls = [
+        "http://34.70.25.107:1015",
+        "http://localhost:1015",
+        "http://localhost:8000",
+        "http://127.0.0.1:1015",
+    ]
+
+    if st.button("🧪 Test Common URLs"):
+        for url in test_urls:
+            try:
+                response = requests.get(f"{url}/docs#/", timeout=5)
+                if response.status_code == 200:
+                    st.success(f"✅ {url} - Working!")
+                else:
+                    st.warning(f"⚠️ {url} - Status: {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ {url} - Error: {str(e)[:50]}...")
+
+    # Test individual endpoints
+    st.subheader("🔧 Endpoint Testing")
+
+    # Test vector search
+    if st.button("Test Vector Search"):
+        with st.spinner("Testing vector search..."):
+            try:
+                current_url = FitnessAPI.get_api_url()
+                response = requests.get(
+                    f"{current_url}/v1/langgraph/test-vector-search/", timeout=30
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success("✅ Vector search working!")
+                    st.json(result)
+                else:
+                    st.error(f"❌ Vector search failed: {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ Vector search error: {str(e)}")
+
+    # Test LangGraph workflow
+    if st.button("Test LangGraph Workflow"):
+        with st.spinner("Testing LangGraph workflow..."):
+            try:
+                current_url = FitnessAPI.get_api_url()
+                response = requests.get(
+                    f"{current_url}/v1/langgraph/test-workflow/", timeout=120
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success("✅ LangGraph workflow working!")
+                    st.json(result)
+                else:
+                    st.error(f"❌ LangGraph workflow failed: {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ LangGraph workflow error: {str(e)}")
+
+    # Test nutrition database
+    if st.button("Test Nutrition Database"):
+        with st.spinner("Testing nutrition database..."):
+            try:
+                current_url = FitnessAPI.get_api_url()
+                test_query = {
+                    "query": "chicken breast",
+                    "limit": 3,
+                    "similarity_threshold": 0.6,
+                }
+                response = requests.post(
+                    f"{current_url}/v1/nutrition_search/search_nutrition_semantic/",
+                    json=test_query,
+                    timeout=30,
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success("✅ Nutrition database working!")
+                    st.write(f"Found {result.get('results_found', 0)} results")
+                    if result.get("results"):
+                        st.json(result["results"][0])  # Show first result
+                else:
+                    st.error(f"❌ Nutrition database failed: {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ Nutrition database error: {str(e)}")
+
+    # Environment info
+    st.subheader("🌍 Environment Information")
+    env_info = {
+        "Current API URL": FitnessAPI.get_api_url(),
+        "Default API URL": API_BASE_URL,
+        "Backend Host (env)": os.getenv("BACKEND_HOST", "Not set"),
+        "Environment": os.getenv("ENVIRONMENT", "Not set"),
+        "Python Version": "3.x",
+        "Streamlit Version": (
+            st.__version__ if hasattr(st, "__version__") else "Unknown"
+        ),
+    }
+
+    for key, value in env_info.items():
+        st.write(f"**{key}:** {value}")
 
 
 if __name__ == "__main__":
