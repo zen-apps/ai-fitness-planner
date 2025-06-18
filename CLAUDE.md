@@ -1,4 +1,16 @@
-Ai-fitness-planner 
+PROJECT 
+
+See below 'About Ai-fitness-planner' to think about initial design as I'd like to dliever a project that all code with be in my github repo and reproducatble with GOAL of being featuers in Langchain's Blog highlighting the ability to use LangGraph.  
+
+
+in Fastapi, working connections to Mongo for nutition (see README.md for examples)
+
+TO DO:
+1) i need a new router to handle all the intereaction with client and langgchain agents 
+
+2) then a streamlit ui to connect . 
+
+About Ai-fitness-planner 
 
 🧠 Project Overview: AI-Powered Fitness + Nutrition Planner
 Core Value Prop

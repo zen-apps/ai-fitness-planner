@@ -28,8 +28,8 @@ else:
     sys.path.append("fast_api")
 
 from app.api.workout import workout
+from app.api.nutrition import nutrition
 
-from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="AI Fitness Planner API",
@@ -37,11 +37,15 @@ app = FastAPI(
     description="== AI Fitness Planner API ==",
 )
 
-login = APIRouter()
-
 
 app.include_router(
     workout,
     prefix="/v1/workout",
     tags=["workout"],
+)
+
+app.include_router(
+    nutrition,
+    prefix="/v1/nutrition",
+    tags=["nutrition"],
 )

@@ -1,13 +1,13 @@
 # ai-fitness-planner
 
 download usda json branded foods data 
-@workout.get("/load_usda_data/")
+@nutrition.get("/load_usda_data/")
 
 load data into mongo
-@workout.post("/import_usda_data/")
+@nutrition.post("/import_usda_data/")
 
 search by product 
-@workout.get("/search_nutrition/")
+@nutrition.get("/search_nutrition/")
 {
   "query": "black label",
   "results_found": 1,
