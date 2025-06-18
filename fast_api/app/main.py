@@ -28,7 +28,9 @@ else:
     sys.path.append("fast_api")
 
 from app.api.workout import workout
-from app.api.nutrition import nutrition
+from app.api.nutrition_setup import nutrition_setup
+from app.api.agents import agents
+from app.api.nutrition_search import nutrition_search
 
 
 app = FastAPI(
@@ -45,7 +47,19 @@ app.include_router(
 )
 
 app.include_router(
-    nutrition,
-    prefix="/v1/nutrition",
-    tags=["nutrition"],
+    nutrition_setup,
+    prefix="/v1/nutrition_setup",
+    tags=["nutrition_setup"],
+)
+
+app.include_router(
+    agents,
+    prefix="/v1/agents",
+    tags=["agents"],
+)
+
+app.include_router(
+    nutrition_search,
+    prefix="/v1/nutrition_search",
+    tags=["nutrition_search"],
 )

@@ -106,7 +106,7 @@ LangGraph (agent orchestration)
 LangChain (LLM prompts, RAG, tool usage)
 
 
-Streamlit or Davia frontend
+Streamlit frontend
 
 
 Chroma or Weaviate (for vector search)
