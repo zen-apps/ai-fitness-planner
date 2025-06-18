@@ -31,6 +31,7 @@ from app.api.workout import workout
 from app.api.nutrition_setup import nutrition_setup
 from app.api.agents import agents
 from app.api.nutrition_search import nutrition_search
+from app.api.langgraph_agents import langgraph_agents
 
 
 app = FastAPI(
@@ -62,4 +63,10 @@ app.include_router(
     nutrition_search,
     prefix="/v1/nutrition_search",
     tags=["nutrition_search"],
+)
+
+app.include_router(
+    langgraph_agents,
+    prefix="/v1/langgraph",
+    tags=["langgraph_agents"],
 )

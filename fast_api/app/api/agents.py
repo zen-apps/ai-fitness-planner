@@ -179,7 +179,76 @@ class MealPlannerAgent:
         )
     
     async def find_foods_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict]:
-        """Find foods matching specific criteria from MongoDB"""
+        """Find foods using existing FAISS vector search"""
+        try:
+            # Import the vector search function from nutrition_search
+            from .nutrition_search import search_nutrition_semantic, NutritionQuery
+            
+            # Build search query based on criteria
+            query_parts = []
+            dietary_restrictions = []
+            macro_goals = {}
+            
+            if criteria.get("high_protein"):
+                query_parts.append("high protein")
+                macro_goals["protein_min"] = 15
+            
+            if criteria.get("low_carb"):
+                query_parts.append("low carb")
+                macro_goals["carbs_max"] = 10
+            
+            if criteria.get("food_category"):
+                query_parts.append(criteria["food_category"])
+            
+            if criteria.get("dietary_preferences"):
+                dietary_restrictions.extend(criteria["dietary_preferences"])
+            
+            # Build search query
+            search_query = " ".join(query_parts) if query_parts else "nutritious food"
+            
+            # Create nutrition query
+            nutrition_query = NutritionQuery(
+                query=search_query,
+                dietary_restrictions=dietary_restrictions,
+                macro_goals=macro_goals,
+                limit=20,
+                similarity_threshold=0.6
+            )
+            
+            # Use existing vector search
+            search_result = await search_nutrition_semantic(nutrition_query)
+            
+            # Convert results to expected format
+            foods = []
+            for result in search_result.results:
+                food_item = {
+                    "fdcId": result.get("fdc_id"),
+                    "description": result.get("description"),
+                    "brandOwner": result.get("brand_owner"),
+                    "brandName": result.get("brand_name"),
+                    "foodCategory": result.get("food_category"),
+                    "nutrition_enhanced": {
+                        "per_100g": result.get("nutrition_per_100g", {}),
+                        "macro_breakdown": {
+                            "primary_macro_category": result.get("primary_macro_category"),
+                            "is_high_protein": result.get("is_high_protein", False)
+                        },
+                        "nutrition_density_score": result.get("nutrition_density_score", 0)
+                    },
+                    "similarity_score": result.get("similarity_score", 0)
+                }
+                foods.append(food_item)
+            
+            logger.info(f"Found {len(foods)} foods using vector search for query: {search_query}")
+            return foods
+            
+        except Exception as e:
+            logger.error(f"Error in vector food search: {str(e)}")
+            # Fallback to basic MongoDB query if vector search fails
+            return await self._fallback_mongo_search(criteria)
+    
+    async def _fallback_mongo_search(self, criteria: Dict[str, Any]) -> List[Dict]:
+        """Fallback MongoDB search if vector search fails"""
         try:
             client = get_mongo_client()
             db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
@@ -206,17 +275,34 @@ class MealPlannerAgent:
             return results
             
         except Exception as e:
-            logger.error(f"Error searching foods: {str(e)}")
+            logger.error(f"Error in fallback search: {str(e)}")
             return []
+    
+    def _get_food_category_preference(self, fitness_goal: str) -> str:
+        """Get preferred food categories based on fitness goal"""
+        goal_categories = {
+            "bulk": "protein snacks",
+            "cut": "lean protein",
+            "recomp": "high protein",
+            "maintenance": "balanced nutrition"
+        }
+        return goal_categories.get(fitness_goal, "nutritious food")
     
     async def generate_meal_plan(self, profile: UserProfile, request: MealPlanRequest) -> Dict[str, Any]:
         """Generate a complete meal plan"""
         
-        # Get suitable foods based on profile
+        # Get suitable foods based on profile using enhanced criteria for vector search
         criteria = {
-            "high_protein": profile.fitness_goal in ["bulk", "recomp"],
-            "low_carb": "keto" in (profile.dietary_preferences or []),
+            "high_protein": profile.fitness_goal in ["bulk", "recomp"] or (profile.target_protein_g or 0) > 120,
+            "low_carb": "keto" in (profile.dietary_preferences or []) or "low carb" in (profile.dietary_preferences or []),
+            "dietary_preferences": profile.dietary_preferences or [],
+            "fitness_goal": profile.fitness_goal,
+            "food_category": self._get_food_category_preference(profile.fitness_goal)
         }
+        
+        # Add specific dietary restrictions for vector search
+        if profile.allergies:
+            criteria["allergies"] = profile.allergies
         
         available_foods = await self.find_foods_by_criteria(criteria)
         
