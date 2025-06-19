@@ -3,9 +3,7 @@ from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_
 
 # Configure page
 st.set_page_config(
-    page_title="Complete Plan - AI Fitness Planner",
-    page_icon="📊",
-    layout="wide"
+    page_title="Complete Plan - AI Fitness Planner", page_icon="📊", layout="wide"
 )
 
 # Initialize session state and setup sidebar
@@ -31,13 +29,11 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🍽️ Meal Plan Settings")
-    meal_plan_days = st.selectbox("Meal Plan Duration", [3, 7, 14], index=1)
+    meal_plan_days = st.selectbox("Meal Plan Days Out", [3, 7, 14], index=1)
 
 with col2:
     st.subheader("💪 Workout Settings")
-    workout_days_per_week = st.selectbox(
-        "Workout Days per Week", [2, 3, 4, 5], index=1
-    )
+    workout_days_per_week = st.selectbox("Workout Days per Week", [2, 3, 4, 5], index=1)
 
 # Plan generation options
 st.subheader("🤖 AI Generation Method")
@@ -123,9 +119,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                st.metric(
-                    "Training Style", workout_plan.get("training_style", "N/A")
-                )
+                st.metric("Training Style", workout_plan.get("training_style", "N/A"))
             with col2:
                 st.metric("Split Type", workout_plan.get("split_type", "N/A"))
             with col3:

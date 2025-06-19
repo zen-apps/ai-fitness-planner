@@ -1,30 +1,6 @@
 version: '3.3'
 
 services:
-  # Jupyter Notebook for AI/ML development
-  notebook_ai_fitness_planner:
-    restart: always
-    build: ./jupyter_notebook
-    ports:
-      - "1960:3839"
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    environment:
-      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
-      - JUPYTER_PASSWORD_HASH=${JUPYTER_PASSWORD_HASH}
-      - MONGODB_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
-      - LANGCHAIN_TRACING_V2=true
-      - LANGCHAIN_PROJECT=ai-fitness-planner
-      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
-    command: jupyter lab --port=3839 --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.password="${JUPYTER_PASSWORD_HASH}"
-    networks:
-      - ai-fitness-network
-    depends_on:
-      - ai_fitness_planner_db
-      - mongodb_ai_fitness_planner
-    
   # PostgreSQL Database
   ai_fitness_planner_db:
     image: postgres:15-alpine
@@ -62,52 +38,12 @@ services:
       - ai-fitness-network
       - sp-net
 
-  # Mongo Express for MongoDB management
-  mongo_express_ai_fitness_planner:
-    image: mongo-express:1.0.0
-    container_name: mongo_express_ai_fitness_planner
-    restart: always
-    ports:
-      - "8084:8081"  # Different port to avoid conflicts
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
-      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb_ai_fitness_planner:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - mongodb_ai_fitness_planner
-
-  # pgAdmin for database management
-  pgadmin_ai_fitness_planner:
-    container_name: pgadmin4_ai_fitness_planner
-    image: dpage/pgadmin4:latest
-    restart: always
-    volumes:
-      - pgadmin_ai_fitness_planner:/var/lib/pgadmin
-    env_file:
-      - .env
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    ports:
-      - "4053:80"
-    networks:
-      - ai-fitness-network
-      - sp-net
-    depends_on:
-      - ai_fitness_planner_db
-
   # FastAPI Backend
   fast_api_ai_fitness_planner:
     restart: always
     build: 
       context: ./fast_api
-      dockerfile: Dockerfile-dev
+      dockerfile: Dockerfile
     env_file:
       - .env
     environment:
@@ -149,8 +85,6 @@ services:
 # Named volumes for data persistence
 volumes:
   db_data_ai_fitness_planner:
-    driver: local
-  pgadmin_ai_fitness_planner:
     driver: local
   mongodb_data_ai_fitness_planner:
     driver: local

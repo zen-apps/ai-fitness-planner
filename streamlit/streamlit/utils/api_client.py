@@ -183,4 +183,3 @@ def setup_api_settings_sidebar():
 
         # Show current API URL
         current_url = FitnessAPI.get_api_url()
-        st.write(f"🔗 **Current URL:** {current_url}")
