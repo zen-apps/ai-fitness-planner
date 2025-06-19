@@ -10,12 +10,13 @@ import os
 import random
 from typing import Dict, List, Any
 
+
 def create_nutrition_sample() -> List[Dict[str, Any]]:
     """Generate realistic nutrition data for quick demos"""
-    
+
     # Define food categories with representative foods
     sample_foods = []
-    
+
     # High-protein foods
     protein_foods = [
         {
@@ -34,17 +35,67 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 165},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 31.0},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 3.6},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 0},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 0},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 74},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 85},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 1.0},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 165,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 31.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 3.6,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 74,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 85,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 1.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         },
         {
             "fdc_id": 10002,
@@ -62,20 +113,70 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 100},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 17.0},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 0.4},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 6.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 0},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 6.0},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 56},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 5},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.1},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
-        }
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 100,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 17.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 0.4,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 6.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 6.0,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 56,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 5,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.1,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
+        },
     ]
-    
+
     # Carbohydrate-rich foods
     carb_foods = [
         {
@@ -94,17 +195,67 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 216},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 5.0},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 1.8},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 45.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 3.5},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 0.7},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 10},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.4},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 216,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 5.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 1.8,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 45.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 3.5,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 0.7,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 10,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.4,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         },
         {
             "fdc_id": 10004,
@@ -122,27 +273,77 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 69},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 3.6},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 1.2},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 12.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 1.9},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 1.4},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 144},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.3},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
-        }
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 69,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 3.6,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 1.2,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 12.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 1.9,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 1.4,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 144,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.3,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
+        },
     ]
-    
+
     # Healthy fats
     fat_foods = [
         {
             "fdc_id": 10005,
             "description": "Avocado, raw",
             "brand_owner": "Generic",
-            "brand_name": "GENERIC", 
+            "brand_name": "GENERIC",
             "food_class": "Branded",
             "food_category": "Fruits and Fruit Juices",
             "gtin_upc": "000000000005",
@@ -154,20 +355,70 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 234},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 2.9},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 21.4},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 12.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 10.0},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 1.0},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 10},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 3.1},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 234,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 2.9,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 21.4,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 12.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 10.0,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 1.0,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 10,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 3.1,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         }
     ]
-    
+
     # Vegetables
     vegetable_foods = [
         {
@@ -175,7 +426,7 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "description": "Broccoli, raw",
             "brand_owner": "Generic",
             "brand_name": "GENERIC",
-            "food_class": "Branded", 
+            "food_class": "Branded",
             "food_category": "Vegetables and Vegetable Products",
             "gtin_upc": "000000000006",
             "ingredients": "Broccoli",
@@ -186,17 +437,67 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 34},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 2.8},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 0.4},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 7.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 2.6},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 1.5},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 33},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.1},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 34,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 2.8,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 0.4,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 7.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 2.6,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 1.5,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 33,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.1,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         },
         {
             "fdc_id": 10007,
@@ -204,7 +505,7 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "brand_owner": "Generic",
             "brand_name": "GENERIC",
             "food_class": "Branded",
-            "food_category": "Vegetables and Vegetable Products", 
+            "food_category": "Vegetables and Vegetable Products",
             "gtin_upc": "000000000007",
             "ingredients": "Sweet potato",
             "serving_size": 130,
@@ -214,18 +515,68 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 112},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 2.0},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 0.1},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 26.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 3.9},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 5.4},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 6},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.0},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
-        }
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 112,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 2.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 0.1,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 26.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 3.9,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 5.4,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 6,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
+        },
     ]
 
     # Fruits
@@ -246,17 +597,67 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 105},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 1.3},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 0.4},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 27.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 3.1},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 14.4},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 1},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.1},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 105,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 1.3,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 0.4,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 27.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 3.1,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 14.4,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 1,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.1,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         }
     ]
 
@@ -278,50 +679,107 @@ def create_nutrition_sample() -> List[Dict[str, Any]]:
             "available_date": "2024-01-01",
             "market_country": "United States",
             "food_nutrients": [
-                {"nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"}, "amount": 150},
-                {"nutrient": {"id": 1003, "name": "Protein", "unitName": "g"}, "amount": 5.0},
-                {"nutrient": {"id": 1004, "name": "Total lipid (fat)", "unitName": "g"}, "amount": 3.0},
-                {"nutrient": {"id": 1005, "name": "Carbohydrate, by difference", "unitName": "g"}, "amount": 27.0},
-                {"nutrient": {"id": 1079, "name": "Fiber, total dietary", "unitName": "g"}, "amount": 4.0},
-                {"nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"}, "amount": 1.0},
-                {"nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"}, "amount": 0},
-                {"nutrient": {"id": 1258, "name": "Fatty acids, total saturated", "unitName": "g"}, "amount": 0.5},
-                {"nutrient": {"id": 1257, "name": "Fatty acids, total trans", "unitName": "g"}, "amount": 0}
-            ]
+                {
+                    "nutrient": {"id": 1008, "name": "Energy", "unitName": "kcal"},
+                    "amount": 150,
+                },
+                {
+                    "nutrient": {"id": 1003, "name": "Protein", "unitName": "g"},
+                    "amount": 5.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1004,
+                        "name": "Total lipid (fat)",
+                        "unitName": "g",
+                    },
+                    "amount": 3.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1005,
+                        "name": "Carbohydrate, by difference",
+                        "unitName": "g",
+                    },
+                    "amount": 27.0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1079,
+                        "name": "Fiber, total dietary",
+                        "unitName": "g",
+                    },
+                    "amount": 4.0,
+                },
+                {
+                    "nutrient": {"id": 2000, "name": "Total Sugars", "unitName": "g"},
+                    "amount": 1.0,
+                },
+                {
+                    "nutrient": {"id": 1093, "name": "Sodium, Na", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {"id": 1253, "name": "Cholesterol", "unitName": "mg"},
+                    "amount": 0,
+                },
+                {
+                    "nutrient": {
+                        "id": 1258,
+                        "name": "Fatty acids, total saturated",
+                        "unitName": "g",
+                    },
+                    "amount": 0.5,
+                },
+                {
+                    "nutrient": {
+                        "id": 1257,
+                        "name": "Fatty acids, total trans",
+                        "unitName": "g",
+                    },
+                    "amount": 0,
+                },
+            ],
         }
     ]
 
     # Combine all food categories
-    all_sample_foods = protein_foods + carb_foods + fat_foods + vegetable_foods + fruit_foods + branded_foods
-    
+    all_sample_foods = (
+        protein_foods
+        + carb_foods
+        + fat_foods
+        + vegetable_foods
+        + fruit_foods
+        + branded_foods
+    )
+
     # Apply enhanced nutrition calculations to each food
     for food in all_sample_foods:
         food = calculate_per_100g_values(food)
-    
+
     return all_sample_foods
 
 
 def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
     """Calculate per-100g nutrition values and add enhanced structure (matches existing system)"""
     serving_size = food_item.get("serving_size", 100)
-    
+
     if not serving_size or serving_size <= 0:
         serving_size = 100
-    
+
     multiplier = 100 / serving_size
     food_nutrients = food_item.get("food_nutrients", [])
-    
+
     def extract_nutrient_by_id(food_nutrients, nutrient_id):
         """Extract specific nutrient amount by ID"""
         for nutrient in food_nutrients:
             if nutrient.get("nutrient", {}).get("id") == nutrient_id:
                 return nutrient.get("amount", 0)
         return 0
-    
+
     nutrient_map = {
         1008: "energy_kcal",
-        1003: "protein_g", 
+        1003: "protein_g",
         1004: "total_fat_g",
         1005: "carbs_g",
         1079: "fiber_g",
@@ -331,48 +789,50 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
         1258: "saturated_fat_g",
         1257: "trans_fat_g",
     }
-    
+
     per_serving = {}
     per_100g = {}
-    
+
     for nutrient_id, nutrient_name in nutrient_map.items():
         amount = extract_nutrient_by_id(food_nutrients, nutrient_id)
         per_serving[nutrient_name] = amount
         per_100g[nutrient_name] = round(amount * multiplier, 2)
-    
+
     def calculate_nutrition_density_score(per_100g):
         """Calculate a nutrition density score"""
         try:
             protein = per_100g.get("protein_g", 0)
             fiber = per_100g.get("fiber_g", 0)
             calories = per_100g.get("energy_kcal", 1)
-            
+
             if calories > 0:
                 return round((protein + fiber) / calories * 100, 2)
             return 0
         except:
             return 0
-    
+
     def calculate_macro_breakdown(per_100g):
         """Calculate macronutrient percentages and categorization"""
         try:
             protein_g = per_100g.get("protein_g", 0)
             fat_g = per_100g.get("total_fat_g", 0)
             carbs_g = per_100g.get("carbs_g", 0)
-            
+
             calories_from_protein = protein_g * 4
-            calories_from_fat = fat_g * 9 
+            calories_from_fat = fat_g * 9
             calories_from_carbs = carbs_g * 4
-            total_calculated_kcal = calories_from_protein + calories_from_fat + calories_from_carbs
-            
+            total_calculated_kcal = (
+                calories_from_protein + calories_from_fat + calories_from_carbs
+            )
+
             if total_calculated_kcal > 0:
                 pct_protein = (calories_from_protein / total_calculated_kcal) * 100
                 pct_fat = (calories_from_fat / total_calculated_kcal) * 100
                 pct_carbs = (calories_from_carbs / total_calculated_kcal) * 100
-                
+
                 macro_categories = []
                 primary_macro = "balanced"
-                
+
                 if pct_protein >= 40:
                     macro_categories.append("high_protein")
                     primary_macro = "high_protein"
@@ -382,7 +842,7 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
                 if pct_carbs >= 40:
                     macro_categories.append("high_carb")
                     primary_macro = "high_carb"
-                
+
                 if len(macro_categories) > 1:
                     max_pct = max(pct_protein, pct_fat, pct_carbs)
                     if max_pct == pct_protein:
@@ -391,7 +851,7 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
                         primary_macro = "high_fat"
                     else:
                         primary_macro = "high_carb"
-                
+
                 return {
                     "protein_percent": round(pct_protein, 1),
                     "fat_percent": round(pct_fat, 1),
@@ -407,7 +867,7 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
                     "is_high_carb": pct_carbs >= 40,
                     "is_balanced": len(macro_categories) == 0,
                 }
-            
+
             return {
                 "protein_percent": 0,
                 "fat_percent": 0,
@@ -439,7 +899,7 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
                 "is_high_carb": False,
                 "is_balanced": False,
             }
-    
+
     food_item["nutrition_enhanced"] = {
         "serving_info": {
             "serving_size_g": serving_size,
@@ -452,32 +912,30 @@ def calculate_per_100g_values(food_item: Dict[str, Any]) -> Dict[str, Any]:
         "nutrition_density_score": calculate_nutrition_density_score(per_100g),
         "macro_breakdown": calculate_macro_breakdown(per_100g),
     }
-    
+
     return food_item
 
 
 def save_sample_data(output_path: str = "./data/sample_nutrition_data.json"):
     """Generate and save sample nutrition data to file"""
-    
+
     # Ensure data directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
+
     # Generate sample foods
     sample_foods = create_nutrition_sample()
-    
+
     # Create structure that matches USDA JSON format
-    sample_data = {
-        "BrandedFoods": sample_foods
-    }
-    
+    sample_data = {"BrandedFoods": sample_foods}
+
     # Save to file
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(sample_data, f, indent=2)
-    
+
     print(f"Generated {len(sample_foods)} sample foods")
     print(f"Saved sample data to: {output_path}")
     print(f"File size: {os.path.getsize(output_path) / 1024:.1f} KB")
-    
+
     return output_path
 
 
@@ -486,5 +944,5 @@ if __name__ == "__main__":
     print(f"\nSample nutrition data generated successfully!")
     print(f"Location: {output_file}")
     print("\nTo use this data:")
-    print("1. Run: python scripts/setup_database.py --mode=demo") 
+    print("1. Run: python scripts/setup_database.py --mode=demo")
     print("2. Or use: make setup-demo")
