@@ -30,27 +30,40 @@ graph TD
     B --> C[Profile Manager Agent]
     B --> D[Meal Planner Agent]
     B --> E[Workout Planner Agent]
-    B --> F[Summary Agent]
+    B --> F[Plan Coordinator Agent]
+    B --> G[Summary Agent]
     
-    C --> G[User Profile DB]
-    D --> H[USDA Nutrition DB]
-    D --> I[FAISS Vector Search]
-    E --> J[Exercise Database]
+    C --> H[User Profile DB]
+    D --> I[USDA Nutrition DB - 300K+ Foods]
+    D --> J[FAISS Vector Search]
+    D --> K[Hybrid Search Engine]
+    E --> L[Exercise Database]
     
-    F --> K[Complete Fitness Plan]
-    K --> L[Streamlit Frontend]
+    F --> M[Plan Integration & Timing]
+    G --> N[Complete Fitness Plan]
+    N --> O[Streamlit Frontend]
+    O --> P[Advanced Food Search UI]
+    
+    Q[LangSmith Tracing] --> B
+    Q --> C
+    Q --> D
+    Q --> E
+    Q --> F
+    Q --> G
 ```
 
 ### Technology Stack
 
-- **LangGraph**: Workflow orchestration and agent coordination
-- **LangChain**: LLM integration and tool management
+- **LangGraph 0.2.72**: Workflow orchestration and agent coordination
+- **LangChain 0.3.25**: LLM integration and tool management
 - **GPT-4**: Primary language model for reasoning and generation
-- **FAISS**: Vector similarity search for nutrition data
-- **MongoDB**: USDA nutrition database (300k+ foods)
+- **FAISS 1.10.0**: Vector similarity search for nutrition data
+- **MongoDB**: USDA nutrition database (300K+ branded foods)
 - **PostgreSQL**: User profiles and plan storage
 - **FastAPI**: Backend API services
-- **Streamlit**: Interactive frontend
+- **Streamlit**: Interactive frontend with advanced food search
+- **LangSmith 0.3.45**: Comprehensive observability and tracing
+- **Sentence Transformers 3.4.1**: Enhanced text embeddings
 
 ---
 
@@ -63,38 +76,54 @@ LangGraph is a library for building stateful, multi-actor applications with LLMs
 ### Key Features Used
 
 1. **State Management**: Maintains user context across agent interactions
-2. **Workflow Orchestration**: Coordinates multiple agents in sequence
-3. **Conditional Logic**: Routes decisions based on user preferences
+2. **Workflow Orchestration**: Coordinates multiple agents in sequence and parallel
+3. **Conditional Logic**: Routes decisions based on user preferences and experience level
 4. **Memory Persistence**: Stores and retrieves user profile data
 5. **Error Handling**: Graceful failure recovery and retry mechanisms
+6. **Plan Coordination**: Synchronizes meal and workout timing for optimal results
+7. **Quick Planning**: Streamlined workflow for rapid plan generation
+8. **Full Observability**: Complete tracing with LangSmith integration
 
 ### LangGraph Workflow Structure
 
 ```python
-# Simplified workflow definition
-class FitnessWorkflowState(TypedDict):
-    user_id: str
-    profile: dict
-    meal_plan: dict
-    workout_plan: dict
-    summary: str
-    errors: list
+# Current workflow definition with enhanced state management
+class FitnessState(TypedDict):
+    messages: Annotated[list, add_messages]
+    user_profile: Optional[dict]
+    meal_plan: Optional[dict]
+    workout_plan: Optional[dict]
+    summary: Optional[str]
+    errors: list[str]
+    meal_preferences: Optional[dict]
+    workout_preferences: Optional[dict]
+    execution_steps: list[str]
 
 def create_fitness_workflow():
-    workflow = StateGraph(FitnessWorkflowState)
+    workflow = StateGraph(FitnessState)
     
-    # Add nodes
-    workflow.add_node("profile_manager", profile_manager_agent)
-    workflow.add_node("meal_planner", meal_planner_agent)
-    workflow.add_node("workout_planner", workout_planner_agent)
-    workflow.add_node("summarizer", summary_agent)
+    # Add nodes with tracing
+    workflow.add_node("manage_profile", manage_profile)
+    workflow.add_node("plan_meals", plan_meals)
+    workflow.add_node("plan_workout", plan_workout)
+    workflow.add_node("coordinate_plans", coordinate_plans)
+    workflow.add_node("summarize_plan", summarize_plan)
     
-    # Define flow
-    workflow.add_edge(START, "profile_manager")
-    workflow.add_edge("profile_manager", "meal_planner")
-    workflow.add_edge("profile_manager", "workout_planner")
-    workflow.add_edge(["meal_planner", "workout_planner"], "summarizer")
-    workflow.add_edge("summarizer", END)
+    # Define conditional flow
+    workflow.add_edge(START, "manage_profile")
+    workflow.add_conditional_edges(
+        "manage_profile",
+        should_generate_plans,
+        {
+            "both": ["plan_meals", "plan_workout"],
+            "meal_only": "plan_meals",
+            "workout_only": "plan_workout",
+            "profile_only": "summarize_plan"
+        }
+    )
+    workflow.add_edge(["plan_meals", "plan_workout"], "coordinate_plans")
+    workflow.add_edge("coordinate_plans", "summarize_plan")
+    workflow.add_edge("summarize_plan", END)
     
     return workflow.compile()
 ```
@@ -215,7 +244,43 @@ def workout_planner_agent(state: FitnessWorkflowState):
     return {"workout_plan": workout_plan}
 ```
 
-### 4. Summary Agent
+### 4. Plan Coordinator Agent
+
+**Purpose**: Coordinates timing and interactions between meal and workout plans
+
+**LLM Tasks**:
+- Optimize meal timing around workouts
+- Coordinate pre/post-workout nutrition
+- Balance training intensity with recovery nutrition
+- Ensure plan components work synergistically
+
+**Key Features**:
+```python
+@traceable(name="coordinate_plans")
+def coordinate_plans(state: FitnessState):
+    """
+    Coordinates meal and workout plans for optimal timing
+    - Pre/post workout meal timing
+    - Training day vs rest day nutrition
+    - Recovery optimization
+    - Plan synchronization
+    """
+    meal_plan = state.get("meal_plan")
+    workout_plan = state.get("workout_plan")
+    
+    if meal_plan and workout_plan:
+        # LLM coordinates timing and interactions
+        coordination = llm.invoke([
+            ("system", "You are an expert at coordinating nutrition and training..."),
+            ("human", f"Meal Plan: {meal_plan}\nWorkout Plan: {workout_plan}")
+        ])
+        
+        return {"meal_plan": coordination["optimized_meals"], "workout_plan": coordination["optimized_workouts"]}
+    
+    return state
+```
+
+### 5. Summary Agent
 
 **Purpose**: Combines all plans into cohesive, actionable guidance
 
@@ -361,33 +426,62 @@ class WorkflowState:
 
 ### Vector Embedding Process
 
-1. **Food Description Embedding**
+1. **Enhanced Food Description Embedding**
    ```python
-   # Create embeddings for food descriptions
+   # Create rich embeddings for food descriptions with context
+   def create_enhanced_description(food_item):
+       return f"{food_item['description']} {food_item.get('brand_owner', '')} "\
+              f"ingredients: {food_item.get('ingredients', '')} "\
+              f"serving: {food_item.get('serving_size', '')} "\
+              f"category: {food_item.get('food_category', '')}"
+   
    descriptions = [
-       "HORMEL BLACK LABEL BROWN SUGAR THICK CUT BACON",
-       "ORGANIC ROLLED OATS CINNAMON RAISIN GRANOLA",
-       ...
+       create_enhanced_description(food) for food in nutrition_data
    ]
    
-   embeddings = embedding_model.embed_documents(descriptions)
-   faiss_index.add(embeddings)
+   # Batch processing for efficient embedding creation
+   batch_size = 100
+   for i in range(0, len(descriptions), batch_size):
+       batch = descriptions[i:i+batch_size]
+       embeddings = embedding_model.embed_documents(batch)
+       faiss_index.add(embeddings)
    ```
 
-2. **Semantic Search Implementation**
+2. **Advanced Hybrid Search Implementation**
    ```python
-   def search_foods_by_description(query: str, limit: int = 10):
-       # Convert query to embedding
+   def search_nutrition_hybrid(query: str, limit: int = 10, semantic_weight: float = 0.7):
+       # Semantic search component
        query_embedding = embedding_model.embed_query(query)
+       semantic_distances, semantic_indices = faiss_index.search(query_embedding, limit * 2)
        
-       # Search FAISS index
-       distances, indices = faiss_index.search(query_embedding, limit)
+       # Traditional text search component
+       text_results = mongo_collection.find(
+           {"$text": {"$search": query}},
+           {"score": {"$meta": "textScore"}}
+       ).limit(limit * 2)
        
-       # Retrieve full food data from MongoDB
-       food_ids = [food_index[i] for i in indices[0]]
-       foods = mongo_collection.find({"fdc_id": {"$in": food_ids}})
+       # Hybrid scoring and ranking
+       combined_results = []
+       for i, idx in enumerate(semantic_indices[0]):
+           food_id = food_index[idx]
+           semantic_score = 1 / (1 + semantic_distances[0][i])  # Convert distance to similarity
+           
+           # Get text search score if available
+           text_score = 0
+           for text_result in text_results:
+               if text_result['fdc_id'] == food_id:
+                   text_score = text_result.get('score', 0)
+                   break
+           
+           # Combine scores
+           final_score = (semantic_weight * semantic_score) + ((1 - semantic_weight) * text_score)
+           combined_results.append((food_id, final_score))
        
-       return foods
+       # Sort by combined score and return top results
+       combined_results.sort(key=lambda x: x[1], reverse=True)
+       top_food_ids = [result[0] for result in combined_results[:limit]]
+       
+       return mongo_collection.find({"fdc_id": {"$in": top_food_ids}})
    ```
 
 ### RAG (Retrieval-Augmented Generation)
@@ -425,7 +519,7 @@ def generate_meal_with_rag(meal_type: str, macro_targets: dict):
 ```
 POST /v1/langgraph/generate-fitness-plan/
 ```
-**Description**: Main endpoint that orchestrates the complete LangGraph workflow
+**Description**: Main endpoint that orchestrates the complete LangGraph workflow with plan coordination
 
 **Request**:
 ```json
@@ -474,13 +568,28 @@ POST /v1/langgraph/generate-fitness-plan/
 }
 ```
 
-#### 2. Test Workflow
+#### 2. Quick Plan Generation
+```
+POST /v1/langgraph/quick-plan/
+```
+**Description**: Streamlined endpoint for rapid plan generation with minimal input
+
+**Request**:
+```json
+{
+    "user_id": "string",
+    "goal": "cut|bulk|maintenance|recomp",
+    "activity_level": "sedentary|lightly_active|moderately_active|very_active"
+}
+```
+
+#### 3. Test Workflow
 ```
 GET /v1/langgraph/test-workflow/
 ```
 **Description**: Tests the LangGraph workflow with sample data
 
-#### 3. Test Vector Search
+#### 4. Test Vector Search
 ```
 GET /v1/langgraph/test-vector-search/
 ```
@@ -494,10 +603,17 @@ POST /v1/agents/profile/
 GET /v1/agents/profile/{user_id}
 ```
 
-#### Vector Search
+#### Nutrition Search Endpoints
 ```
 POST /v1/nutrition_search/search_nutrition_semantic/
+POST /v1/nutrition_search/search_nutrition_hybrid/
+POST /v1/nutrition_search/search_nutrition_advanced/
 ```
+
+**Advanced Search Features**:
+- **Semantic Search**: Natural language queries ("high protein breakfast foods")
+- **Hybrid Search**: Combines AI similarity with traditional text matching
+- **Advanced Filters**: Nutrition criteria, dietary restrictions, and macro goals
 
 ---
 
@@ -592,10 +708,14 @@ LangSmith has been successfully integrated into the AI Fitness Planner to provid
 
 #### 1. Dependencies & Configuration
 
-**Added Dependencies:**
+**Current Dependencies:**
 ```python
 # fast_api/requirements.txt
-langsmith==0.1.156
+langgraph==0.2.72
+langsmith==0.3.45
+langchain==0.3.25
+faiss-cpu==1.10.0
+sentence-transformers==3.4.1
 ```
 
 **Environment Configuration:**
@@ -833,9 +953,89 @@ This LangSmith integration transforms the AI Fitness Planner from a functional s
 
 ---
 
+## Current Advanced Features
+
+### 1. **Advanced Food Search System**
+
+The system now includes a sophisticated food search interface with three distinct modes:
+
+#### Basic Search
+- Traditional name and brand-based food lookup
+- Fast results for known food items
+- Integrated with MongoDB text search indexes
+
+#### Semantic Search  
+- Natural language queries ("high protein breakfast options")
+- AI-powered understanding of dietary preferences
+- Automatic dietary restriction filtering
+- Similarity scoring and relevance ranking
+
+#### Advanced Filters
+- **Hybrid Search**: Combines semantic AI with traditional text matching
+- **Nutrition Criteria**: Filter by macro/micronutrient ranges
+- **Dietary Restrictions**: Real-time allergy and preference filtering
+- **Quality Scoring**: Nutrition density and match quality indicators
+
+```python
+# Example advanced search implementation
+def advanced_food_search(
+    query: str,
+    dietary_restrictions: List[str] = None,
+    min_protein: float = None,
+    max_calories: float = None,
+    semantic_weight: float = 0.7
+):
+    # Hybrid search with nutrition filtering
+    results = search_nutrition_hybrid(query, semantic_weight=semantic_weight)
+    
+    # Apply dietary restriction filters
+    if dietary_restrictions:
+        results = filter_dietary_restrictions(results, dietary_restrictions)
+    
+    # Apply nutrition criteria filters
+    if min_protein or max_calories:
+        results = filter_nutrition_criteria(results, min_protein, max_calories)
+    
+    # Calculate nutrition density scores
+    scored_results = calculate_nutrition_scores(results)
+    
+    return scored_results
+```
+
+### 2. **Enhanced Workflow Coordination**
+
+#### Plan Coordination Node
+A specialized agent that optimizes the interaction between meal and workout plans:
+
+- **Pre/Post Workout Nutrition**: Automatic meal timing optimization
+- **Training Day Variations**: Different nutrition on training vs rest days
+- **Recovery Optimization**: Coordinated nutrition and rest periods
+- **Supplement Timing**: Integration of supplement recommendations with meal timing
+
+#### Conditional Routing
+Smart workflow routing based on user preferences and experience level:
+
+```python
+def should_generate_plans(state: FitnessState) -> str:
+    """Determines which plans to generate based on user preferences"""
+    meal_requested = state.get("meal_preferences") is not None
+    workout_requested = state.get("workout_preferences") is not None
+    
+    if meal_requested and workout_requested:
+        return "both"
+    elif meal_requested:
+        return "meal_only"
+    elif workout_requested:
+        return "workout_only"
+    else:
+        return "profile_only"
+```
+
+---
+
 ## Future Enhancements
 
-### 1. **Advanced Agent Capabilities**
+### 1. **Additional Agent Capabilities**
 
 #### Progress Tracking Agent
 ```python
