@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 
+# LangSmith integration
+from langsmith import traceable
+
 # LangGraph imports
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolExecutor
@@ -123,6 +126,7 @@ class FitnessWorkflow:
         
         return workflow.compile()
     
+    @traceable(name="manage_profile")
     async def _manage_profile(self, state: FitnessState) -> FitnessState:
         """Node: Manage user profile and calculate nutritional needs"""
         logger.info(f"Managing profile for user: {state['user_id']}")
@@ -188,6 +192,7 @@ class FitnessWorkflow:
         else:
             return "both"  # Default to both if unclear
     
+    @traceable(name="plan_meals")
     async def _plan_meals(self, state: FitnessState) -> FitnessState:
         """Node: Generate meal plan"""
         logger.info(f"Planning meals for user: {state['user_id']}")
@@ -222,6 +227,7 @@ class FitnessWorkflow:
             
         return state
     
+    @traceable(name="plan_workout")
     async def _plan_workout(self, state: FitnessState) -> FitnessState:
         """Node: Generate workout plan"""
         logger.info(f"Planning workouts for user: {state['user_id']}")
@@ -324,6 +330,7 @@ class FitnessWorkflow:
             
         return state
     
+    @traceable(name="execute_fitness_workflow")
     async def execute_workflow(self, request: LangGraphFitnessRequest) -> Dict[str, Any]:
         """Execute the complete fitness planning workflow"""
         

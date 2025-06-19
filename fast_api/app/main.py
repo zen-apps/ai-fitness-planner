@@ -17,6 +17,13 @@ from dotenv import load_dotenv
 import os
 import json
 
+# Load environment variables
+load_dotenv()
+
+# Configure LangSmith tracing
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "ai-fitness-planner"
+
 environment = os.getenv("ENVIRONMENT")
 print("environment", environment)
 import sys

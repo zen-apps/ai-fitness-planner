@@ -16,7 +16,7 @@ pytest==7.2.2
 pyJWT==2.3.0
 gunicorn==20.1.0 
 inapppy==2.5.2
-langchain==0.3.18
+langchain==0.3.25
 langgraph==0.2.72
 openai==1.63.0
 faiss-cpu==1.10.0
@@ -32,3 +32,4 @@ langchain-anthropic==0.3.7
 langchain-google-genai==2.0.9
 schedule==1.2.0
 ijson==3.4.0
+langsmith==0.3.45
