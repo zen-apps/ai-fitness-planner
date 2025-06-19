@@ -131,7 +131,7 @@ class FitnessAPI:
             response = requests.post(
                 f"{api_url}/v1/langgraph/generate-fitness-plan/",
                 json=request_data,
-                timeout=90,
+                timeout=240,
             )
             response.raise_for_status()
             return response.json()

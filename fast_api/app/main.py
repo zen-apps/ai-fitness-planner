@@ -34,7 +34,6 @@ if environment == "dev":
 else:
     sys.path.append("fast_api")
 
-from app.api.workout import workout
 from app.api.nutrition_setup import nutrition_setup
 from app.api.agents import agents
 from app.api.nutrition_search import nutrition_search
@@ -47,12 +46,6 @@ app = FastAPI(
     description="== AI Fitness Planner API ==",
 )
 
-
-app.include_router(
-    workout,
-    prefix="/v1/workout",
-    tags=["workout"],
-)
 
 app.include_router(
     nutrition_setup,
