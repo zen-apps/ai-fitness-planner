@@ -2,9 +2,9 @@ import os
 import json
 import logging
 from typing import List, Dict, Any, Optional, TypedDict, Annotated
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pymongo import MongoClient
 
 # LangSmith integration
@@ -436,155 +436,9 @@ async def generate_fitness_plan_workflow(request: LangGraphFitnessRequest):
         )
 
 
-@langgraph_agents.post("/quick-plan/")
-async def generate_quick_plan(
-    user_id: str,
-    age: int = 30,
-    weight: float = 70.0,
-    height: float = 175.0,
-    fitness_goal: str = "maintenance",
-):
-    """Quick fitness plan generation with minimal input"""
-    try:
-        # Create profile
-        profile = UserProfile(
-            user_id=user_id,
-            age=age,
-            weight=weight,
-            height=height,
-            fitness_goal=fitness_goal,
-            activity_level="moderate",
-        )
-
-        # Create request
-        request = LangGraphFitnessRequest(
-            user_id=user_id,
-            user_profile=profile,
-            generate_meal_plan=True,
-            generate_workout_plan=True,
-        )
-
-        # Create workflow instance with default O3-mini
-        workflow = FitnessWorkflow(use_o3_mini=True)
-        result = await workflow.execute_workflow(request)
-        return result
-
-    except Exception as e:
-        logger.error(f"Error in quick plan generation: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate quick plan: {str(e)}"
-        )
 
 
-@langgraph_agents.get("/workflow-status/{user_id}")
-async def get_workflow_status(user_id: str):
-    """Get the latest workflow execution status for a user"""
-    try:
-        # This could be enhanced to store workflow executions in MongoDB
-        # For now, return a simple status check
-
-        client = get_mongo_client()
-        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        profiles = db["user_profiles"]
-
-        profile = profiles.find_one({"user_id": user_id})
-        client.close()
-
-        if profile:
-            return {
-                "user_id": user_id,
-                "profile_exists": True,
-                "last_updated": profile.get("updated_at"),
-                "workflow_available": True,
-            }
-        else:
-            return {
-                "user_id": user_id,
-                "profile_exists": False,
-                "workflow_available": True,
-            }
-
-    except Exception as e:
-        logger.error(f"Error checking workflow status: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to check workflow status: {str(e)}"
-        )
 
 
-@langgraph_agents.get("/test-vector-search/")
-async def test_vector_search():
-    """Test the vector search integration"""
-    try:
-        from .agents import MealPlannerAgent
-
-        meal_agent = MealPlannerAgent(use_o3_mini=True)
-
-        # Test criteria for high protein foods
-        test_criteria = {
-            "high_protein": True,
-            "fitness_goal": "bulk",
-            "food_category": "protein snacks",
-        }
-
-        foods = await meal_agent.find_foods_by_criteria(test_criteria)
-
-        return {
-            "test_status": "success",
-            "criteria_tested": test_criteria,
-            "foods_found": len(foods),
-            "sample_foods": [
-                {
-                    "description": food.get("description", ""),
-                    "brand": food.get("brandOwner", ""),
-                    "similarity_score": food.get("similarity_score", 0),
-                    "protein_per_100g": food.get("nutrition_enhanced", {})
-                    .get("per_100g", {})
-                    .get("protein_g", 0),
-                }
-                for food in foods[:3]  # Show first 3 results
-            ],
-        }
-
-    except Exception as e:
-        logger.error(f"Error testing vector search: {str(e)}")
-        return {"test_status": "failed", "error": str(e)}
 
 
-@langgraph_agents.get("/test-workflow/")
-async def test_workflow():
-    """Test the LangGraph workflow with a sample user"""
-    try:
-        test_request = LangGraphFitnessRequest(
-            user_id="test_user_123",
-            user_profile=UserProfile(
-                user_id="test_user_123",
-                age=25,
-                weight=75.0,
-                height=180.0,
-                fitness_goal="bulk",
-                activity_level="active",
-            ),
-            generate_meal_plan=True,
-            generate_workout_plan=True,
-            use_o3_mini=False,
-        )
-
-        # Create workflow instance with gpt-4o-mini for faster testing
-        workflow = FitnessWorkflow(use_o3_mini=False)
-        result = await workflow.execute_workflow(test_request)
-
-        # Return a summary without the full plans for testing
-        return {
-            "test_status": "success",
-            "workflow_status": result["workflow_status"],
-            "steps_executed": len(result["execution_steps"]),
-            "errors_count": len(result["errors"]),
-            "has_meal_plan": result["meal_plan"] is not None,
-            "has_workout_plan": result["workout_plan"] is not None,
-            "has_summary": result["summary"] is not None,
-            "generated_at": result["generated_at"],
-        }
-
-    except Exception as e:
-        logger.error(f"Error in workflow test: {str(e)}")
-        return {"test_status": "failed", "error": str(e)}

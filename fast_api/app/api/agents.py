@@ -1,15 +1,13 @@
 import os
 import json
 import logging
-from typing import List, Dict, Any, Optional, Union
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pymongo import MongoClient
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.schema import BaseMessage
 from langsmith import traceable
 
 # Set up logging
@@ -752,62 +750,6 @@ async def get_profile(user_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get profile: {str(e)}")
 
 
-@agents.post("/meal-plan/")
-async def generate_meal_plan(request: MealPlanRequest):
-    """Generate personalized meal plan"""
-    try:
-        # Get user profile
-        client = get_mongo_client()
-        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        profiles = db["user_profiles"]
-
-        profile_data = profiles.find_one({"user_id": request.user_id})
-        client.close()
-
-        if not profile_data:
-            raise HTTPException(status_code=404, detail="User profile not found")
-
-        profile_data.pop("_id", None)
-        profile = UserProfile(**profile_data)
-
-        meal_plan = await meal_agent.generate_meal_plan(profile, request)
-        return meal_plan
-
-    except Exception as e:
-        logger.error(f"Error generating meal plan: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate meal plan: {str(e)}"
-        )
-
-
-@agents.post("/workout-plan/")
-async def generate_workout_plan(request: WorkoutPlanRequest):
-    """Generate personalized workout plan"""
-    try:
-        # Get user profile
-        client = get_mongo_client()
-        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        profiles = db["user_profiles"]
-
-        profile_data = profiles.find_one({"user_id": request.user_id})
-        client.close()
-
-        if not profile_data:
-            raise HTTPException(status_code=404, detail="User profile not found")
-
-        profile_data.pop("_id", None)
-        profile = UserProfile(**profile_data)
-
-        workout_plan = await workout_agent.generate_workout_plan(profile, request)
-        return workout_plan
-
-    except Exception as e:
-        logger.error(f"Error generating workout plan: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate workout plan: {str(e)}"
-        )
-
-
 @agents.post("/complete-plan/", response_model=FitnessPlansResponse)
 async def generate_complete_fitness_plan(
     user_id: str,
@@ -860,30 +802,3 @@ async def generate_complete_fitness_plan(
         raise HTTPException(
             status_code=500, detail=f"Failed to generate complete plan: {str(e)}"
         )
-
-
-@agents.get("/test/")
-async def test_agents():
-    """Test endpoint to verify agents are working"""
-    return {
-        "status": "success",
-        "message": "LangChain Agents API with Structured Output is working",
-        "available_endpoints": [
-            "/profile/ (POST) - Create/update user profile",
-            "/profile/{user_id} (GET) - Get user profile",
-            "/meal-plan/ (POST) - Generate meal plan",
-            "/workout-plan/ (POST) - Generate workout plan",
-            "/complete-plan/ (POST) - Generate complete fitness plan",
-        ],
-        "agents_initialized": {
-            "profile_manager": "✓",
-            "meal_planner": "✓ (with structured output)",
-            "workout_planner": "✓ (with structured output)",
-            "summary_agent": "✓ (with structured output)",
-        },
-        "structured_output_models": [
-            "MealPlanStructured",
-            "WorkoutPlanStructured",
-            "ComprehensiveSummary",
-        ],
-    }

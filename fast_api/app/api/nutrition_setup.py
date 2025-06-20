@@ -2,20 +2,13 @@ import os
 import json
 import logging
 from typing import List, Dict, Any, Tuple
-from fastapi import APIRouter, Response, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
-import pandas as pd
-import re
-
 import requests
 import zipfile
-import os
 from pathlib import Path
 import time
 from tqdm import tqdm
-import json
 import ijson
 from decimal import Decimal
 from pymongo import MongoClient
@@ -35,60 +28,6 @@ logging.basicConfig(
 logger = logging.getLogger("workout_optimization")
 
 nutrition_setup = APIRouter()
-
-
-@nutrition_setup.get("/test_postgres_db/")
-async def test_db():
-    """Test database connection with improved error handling"""
-    import psycopg2
-    from psycopg2 import sql
-
-    # Try different host configurations
-    hosts_to_try = [
-        "ai_fitness_planner_db",  # Docker service name
-        "localhost",  # If running locally
-        "127.0.0.1",  # Fallback
-    ]
-
-    for host in hosts_to_try:
-        try:
-            logger.info(f"Attempting to connect to database at host: {host}")
-
-            conn = psycopg2.connect(
-                dbname=os.getenv("DB_NAME"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD"),
-                host=host,
-                port=5432,
-                connect_timeout=10,
-            )
-
-            cursor = conn.cursor()
-            cursor.execute("SELECT version();")
-            db_version = cursor.fetchone()
-            cursor.close()
-            conn.close()
-
-            logger.info(f"Successfully connected to database at host: {host}")
-            return {
-                "status": "success",
-                "db_version": db_version,
-                "connected_host": host,
-                "environment_vars": {
-                    "DB_NAME": os.getenv("DB_NAME"),
-                    "DB_USER": os.getenv("DB_USER"),
-                    "DB_PASSWORD": "***" if os.getenv("DB_PASSWORD") else None,
-                },
-            }
-
-        except Exception as e:
-            logger.warning(f"Failed to connect to database at host {host}: {str(e)}")
-            continue
-
-    # If all hosts failed
-    error_msg = f"Failed to connect to database. Tried hosts: {', '.join(hosts_to_try)}"
-    logger.error(error_msg)
-    raise HTTPException(status_code=500, detail=error_msg)
 
 
 @nutrition_setup.get("/download_raw_usda_data/")
@@ -755,7 +694,7 @@ async def sample_usda_data(
     sample_size: int = 5000,
 ):
     """Sample USDA Branded Foods data evenly across macro categories from MongoDB and extract from USDA JSON"""
-    
+
     def convert_decimal_in_dict(d):
         """Recursively convert all Decimal values to float in a dictionary"""
         for k, v in d.items():
@@ -950,110 +889,123 @@ async def sample_usda_data(
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
 
-        logger.info(f"Starting to sample {sample_size} foods evenly across macro categories from MongoDB...")
-        
+        logger.info(
+            f"Starting to sample {sample_size} foods evenly across macro categories from MongoDB..."
+        )
+
         # Connect to MongoDB and get nutrition_enhanced foods by macro category
         client = get_mongo_client()
         db_name = os.getenv("MONGO_DB_NAME", "usda_nutrition")
         db = client[db_name]
         collection = db["branded_foods"]
-        
+
         # Define macro categories for even sampling
         macro_categories = ["high_protein", "high_fat", "high_carb", "balanced"]
-        foods_per_category = sample_size // len(macro_categories)  # 1250 foods per category
+        foods_per_category = sample_size // len(
+            macro_categories
+        )  # 1250 foods per category
         remainder = sample_size % len(macro_categories)
-        
-        logger.info(f"Sampling {foods_per_category} foods per macro category ({len(macro_categories)} categories)")
-        
+
+        logger.info(
+            f"Sampling {foods_per_category} foods per macro category ({len(macro_categories)} categories)"
+        )
+
         # Sample evenly from each macro category
         all_sampled_fdc_ids = []
         category_counts = {}
-        
+
         import random
+
         random.seed(42)  # For reproducible sampling
-        
+
         for i, category in enumerate(macro_categories):
             # Calculate sample size for this category (add remainder to first categories)
             category_sample_size = foods_per_category + (1 if i < remainder else 0)
-            
+
             # Query MongoDB for foods in this macro category with nutrition_enhanced data
             query = {
                 "nutrition_enhanced.macro_breakdown.primary_macro_category": category,
                 "nutrition_enhanced": {"$exists": True},
-                "fdcId": {"$exists": True}
+                "fdcId": {"$exists": True},
             }
-            
+
             # Get all foods in this category and sample from them
             foods_in_category = list(collection.find(query, {"fdcId": 1, "_id": 0}))
-            
+
             if len(foods_in_category) == 0:
                 logger.warning(f"No foods found for macro category: {category}")
                 continue
-                
-            # Sample from available foods in this category  
+
+            # Sample from available foods in this category
             if len(foods_in_category) <= category_sample_size:
                 sampled_foods = foods_in_category
             else:
                 sampled_foods = random.sample(foods_in_category, category_sample_size)
-            
+
             # Extract fdcIds
             fdc_ids = [food["fdcId"] for food in sampled_foods]
             all_sampled_fdc_ids.extend(fdc_ids)
             category_counts[category] = len(fdc_ids)
-            
-            logger.info(f"Sampled {len(fdc_ids)} foods from {category} category (available: {len(foods_in_category)})")
-        
+
+            logger.info(
+                f"Sampled {len(fdc_ids)} foods from {category} category (available: {len(foods_in_category)})"
+            )
+
         client.close()
-        
+
         logger.info(f"Total fdcIds sampled: {len(all_sampled_fdc_ids)}")
         logger.info(f"Category distribution: {category_counts}")
-        
+
         # Now extract these specific foods from the USDA JSON file
         logger.info("Extracting sampled foods from USDA JSON file...")
         sampled_foods = []
-        fdc_id_set = set(str(fdc_id) for fdc_id in all_sampled_fdc_ids)  # Convert to strings for comparison
-        
+        fdc_id_set = set(
+            str(fdc_id) for fdc_id in all_sampled_fdc_ids
+        )  # Convert to strings for comparison
+
         # Use ijson to stream and extract specific foods
         with open(file_path, "rb") as f:
             parser = ijson.items(f, "BrandedFoods.item")
-            
+
             for food in parser:
                 food_fdc_id = str(food.get("fdcId", ""))
                 if food_fdc_id in fdc_id_set:
                     sampled_foods.append(food)
-                    fdc_id_set.remove(food_fdc_id)  # Remove to avoid duplicates and speed up
-                    
+                    fdc_id_set.remove(
+                        food_fdc_id
+                    )  # Remove to avoid duplicates and speed up
+
                     # Stop when we've found all foods
                     if not fdc_id_set:
                         break
-        
+
         logger.info(f"Successfully extracted {len(sampled_foods)} foods from USDA JSON")
-        
+
         # Process sampled foods with enhanced nutrition calculations
         logger.info("Processing sampled foods with enhanced nutrition calculations...")
         processed_foods = []
-        
+
         for food in sampled_foods:
             try:
                 # Convert all Decimal values to float recursively
                 food = convert_decimal_in_dict(food)
-                
+
                 # Add enhanced nutrition calculations
                 food = calculate_per_100g_values(food)
                 processed_foods.append(food)
-                
+
             except Exception as e:
                 logger.warning(f"Error processing food item: {str(e)}")
                 # Still add the item without enhancement if calculation fails
                 processed_foods.append(food)
-        
+
         # Create output directory if it doesn't exist
         output_dir = Path("./fast_api/app/api/nutrition_data/samples")
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Save sampled data to file
         output_file = output_dir / f"usda_sampled_{sample_size}_foods.json"
-        
+
         sample_data = {
             "metadata": {
                 "sampled_foods": len(processed_foods),
@@ -1065,14 +1017,14 @@ async def sample_usda_data(
                 "category_distribution": category_counts,
                 "foods_per_category_target": foods_per_category,
             },
-            "BrandedFoods": processed_foods
+            "BrandedFoods": processed_foods,
         }
-        
-        with open(output_file, 'w') as f:
+
+        with open(output_file, "w") as f:
             json.dump(sample_data, f, indent=2)
-        
+
         logger.info(f"Sample data saved to {output_file}")
-        
+
         return {
             "status": "success",
             "message": f"Successfully sampled {len(processed_foods)} foods evenly across macro categories",
@@ -1081,7 +1033,7 @@ async def sample_usda_data(
             "output_file": str(output_file),
             "file_size_mb": round(os.path.getsize(output_file) / (1024 * 1024), 2),
             "sample_metadata": sample_data["metadata"],
-            "sample_food_example": processed_foods[0] if processed_foods else None
+            "sample_food_example": processed_foods[0] if processed_foods else None,
         }
 
     except Exception as e:
@@ -1096,11 +1048,13 @@ async def import_sampled_data(
     sample_file: str = "./fast_api/app/api/nutrition_data/samples/usda_sampled_5000_foods.json",
 ):
     """Import sampled USDA data into MongoDB for quick setup"""
-    
+
     try:
         # Check if file exists
         if not os.path.exists(sample_file):
-            raise HTTPException(status_code=404, detail=f"Sample file not found: {sample_file}")
+            raise HTTPException(
+                status_code=404, detail=f"Sample file not found: {sample_file}"
+            )
 
         # Get MongoDB connection
         client = get_mongo_client()
@@ -1176,29 +1130,27 @@ async def import_sampled_data(
 
         # Load and import sampled data
         logger.info(f"Loading sampled data from {sample_file}...")
-        
-        with open(sample_file, 'r') as f:
+
+        with open(sample_file, "r") as f:
             sample_data = json.load(f)
-        
+
         foods = sample_data.get("BrandedFoods", [])
         metadata = sample_data.get("metadata", {})
-        
+
         logger.info(f"Importing {len(foods)} sampled foods...")
-        
+
         batch_size = 1000
         total_processed = 0
-        
+
         for i in range(0, len(foods), batch_size):
-            batch = foods[i:i + batch_size]
+            batch = foods[i : i + batch_size]
             try:
                 branded_foods.insert_many(batch)
                 total_processed += len(batch)
                 logger.info(f"Processed {total_processed}/{len(foods)} foods...")
             except Exception as e:
                 logger.error(f"Error in batch: {str(e)}")
-                raise HTTPException(
-                    status_code=500, detail=f"Import failed: {str(e)}"
-                )
+                raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
         final_count = branded_foods.count_documents({})
         enhanced_final_count = branded_foods.count_documents(
@@ -1218,7 +1170,7 @@ async def import_sampled_data(
             "source_file": sample_file,
             "indexes_created": [
                 "foodClass",
-                "brandOwner", 
+                "brandOwner",
                 "foodCategory",
                 "gtinUpc",
                 "search_text_index (description + ingredients)",

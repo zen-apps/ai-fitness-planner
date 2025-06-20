@@ -1,21 +1,7 @@
-import uvicorn
-from fastapi import (
-    Depends,
-    Response,
-    FastAPI,
-    HTTPException,
-    status,
-    Form,
-    Request,
-    APIRouter,
-)
-from pydantic import BaseModel
-import pandas as pd
-from typing import Union, Optional
-from datetime import datetime, timedelta
+from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
-import json
+import sys
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +12,6 @@ os.environ["LANGCHAIN_PROJECT"] = "ai-fitness-planner"
 
 environment = os.getenv("ENVIRONMENT")
 print("environment", environment)
-import sys
 
 if environment == "dev":
     print("detected dev environment")
