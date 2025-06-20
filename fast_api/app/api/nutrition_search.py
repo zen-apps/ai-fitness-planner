@@ -39,7 +39,7 @@ class NutritionQuery(BaseModel):
     )
     limit: int = Field(default=10, description="Number of results to return")
     similarity_threshold: float = Field(
-        default=0.7, description="Minimum similarity score (0-1)"
+        default=0.5, description="Minimum similarity score (0-1)"
     )
 
 

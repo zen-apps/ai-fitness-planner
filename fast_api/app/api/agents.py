@@ -22,6 +22,8 @@ logger = logging.getLogger("fitness_agents")
 
 agents = APIRouter()
 
+AVAILABLE_FOODS_COUNT = 100  # Number of foods to return in search results
+
 
 # Pydantic models for request/response
 class UserProfile(BaseModel):
@@ -315,8 +317,8 @@ class MealPlannerAgent:
                 query=search_query,
                 dietary_restrictions=dietary_restrictions,
                 macro_goals=macro_goals,
-                limit=20,
-                similarity_threshold=0.6,
+                limit=AVAILABLE_FOODS_COUNT,
+                similarity_threshold=0.5,
             )
 
             # Use existing vector search
@@ -363,7 +365,9 @@ class MealPlannerAgent:
                         .get("per_100g", {})
                         .get("protein_g", 0),
                     }
-                    for food in foods[:5]  # First 5 results for tracing
+                    for food in foods[
+                        :AVAILABLE_FOODS_COUNT
+                    ]  # First 5 results for tracing
                 ],
             }
 
@@ -477,7 +481,9 @@ class MealPlannerAgent:
                 "nutrition": food.get("nutrition_enhanced", {}).get("per_100g", {}),
                 "brand": food.get("brandOwner", ""),
             }
-            for food in available_foods[:100]  # Use more foods for better variety
+            for food in available_foods[
+                :AVAILABLE_FOODS_COUNT
+            ]  # Use more foods for better variety
         ]
 
         # Create meal plan using structured LLM
@@ -665,7 +671,7 @@ class PlanSummaryAgent:
             summary_text = f"""
 ### {summary_structured.overview}
 
-### Key Highlights
+Key Highlights
 {chr(10).join(f"• {highlight}" for highlight in summary_structured.key_highlights)}
 
 ### How Your Plans Work Together
