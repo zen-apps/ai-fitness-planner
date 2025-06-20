@@ -37,6 +37,12 @@ with col2:
         "Workout Days per Week", [1, 2, 3, 4, 5, 6, 7], index=1
     )
 
+# AI Model Settings
+st.subheader("🤖 AI Model Settings")
+use_o3_mini = st.checkbox(
+    "Use O3-mini Reasoning (takes longer, better results)", value=False
+)
+
 # Generate button
 if st.button("🚀 Generate Complete Plan", use_container_width=True, type="primary"):
     with st.spinner("🤖 LangGraph workflow is orchestrating your plan..."):
@@ -48,7 +54,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
         progress_bar.progress(20)
 
         result = FitnessAPI.generate_langgraph_plan(
-            st.session_state.user_id, workout_days_per_week
+            st.session_state.user_id, workout_days_per_week, use_o3_mini
         )
 
         if result:

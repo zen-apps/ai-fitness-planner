@@ -63,6 +63,7 @@ class LangGraphFitnessRequest(BaseModel):
     workout_preferences: Optional[Dict[str, Any]] = Field(default_factory=dict)
     generate_meal_plan: bool = True
     generate_workout_plan: bool = True
+    use_o3_mini: bool = True
 
 
 class LangGraphFitnessResponse(BaseModel):
@@ -80,11 +81,12 @@ class LangGraphFitnessResponse(BaseModel):
 class FitnessWorkflow:
     """LangGraph workflow orchestrator for fitness planning"""
 
-    def __init__(self):
+    def __init__(self, use_o3_mini: bool = True):
         self.profile_agent = ProfileManagerAgent()
-        self.meal_agent = MealPlannerAgent()
+        self.meal_agent = MealPlannerAgent(use_o3_mini=use_o3_mini)
         self.workout_agent = WorkoutPlannerAgent()
         self.summary_agent = PlanSummaryAgent()
+        self.use_o3_mini = use_o3_mini
 
         # Initialize LLM for coordination
         self.coordinator_llm = ChatOpenAI(
@@ -411,8 +413,8 @@ class FitnessWorkflow:
             }
 
 
-# Initialize workflow
-fitness_workflow = FitnessWorkflow()
+# Initialize workflow - will be dynamically created per request
+fitness_workflow = None
 
 
 # API Endpoints
@@ -422,7 +424,9 @@ fitness_workflow = FitnessWorkflow()
 async def generate_fitness_plan_workflow(request: LangGraphFitnessRequest):
     """Generate complete fitness plan using LangGraph workflow orchestration"""
     try:
-        result = await fitness_workflow.execute_workflow(request)
+        # Create workflow instance with the requested model preference
+        workflow = FitnessWorkflow(use_o3_mini=request.use_o3_mini)
+        result = await workflow.execute_workflow(request)
         return LangGraphFitnessResponse(**result)
 
     except Exception as e:
@@ -460,7 +464,9 @@ async def generate_quick_plan(
             generate_workout_plan=True,
         )
 
-        result = await fitness_workflow.execute_workflow(request)
+        # Create workflow instance with default O3-mini
+        workflow = FitnessWorkflow(use_o3_mini=True)
+        result = await workflow.execute_workflow(request)
         return result
 
     except Exception as e:
@@ -511,7 +517,7 @@ async def test_vector_search():
     try:
         from .agents import MealPlannerAgent
 
-        meal_agent = MealPlannerAgent()
+        meal_agent = MealPlannerAgent(use_o3_mini=True)
 
         # Test criteria for high protein foods
         test_criteria = {
@@ -563,7 +569,9 @@ async def test_workflow():
             generate_workout_plan=True,
         )
 
-        result = await fitness_workflow.execute_workflow(test_request)
+        # Create workflow instance with default O3-mini for testing
+        workflow = FitnessWorkflow(use_o3_mini=True)
+        result = await workflow.execute_workflow(test_request)
 
         # Return a summary without the full plans for testing
         return {

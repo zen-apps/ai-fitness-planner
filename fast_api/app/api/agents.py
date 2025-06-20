@@ -277,12 +277,18 @@ class ProfileManagerAgent:
 class MealPlannerAgent:
     """Generates personalized meal plans using nutrition database"""
 
-    def __init__(self):
-        self.llm = ChatOpenAI(
-            # model="gpt-4o-mini", temperature=0.7, api_key=os.getenv("OPENAI_API_KEY")
-            model="o3-mini",
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
+    def __init__(self, use_o3_mini: bool = True):
+        if use_o3_mini:
+            self.llm = ChatOpenAI(
+                model="o3-mini",
+                api_key=os.getenv("OPENAI_API_KEY"),
+            )
+        else:
+            self.llm = ChatOpenAI(
+                model="gpt-4o-mini", 
+                temperature=0.7, 
+                api_key=os.getenv("OPENAI_API_KEY")
+            )
 
     @traceable(name="find_foods_by_criteria")
     async def find_foods_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict]:
@@ -704,7 +710,7 @@ class PlanSummaryAgent:
 
 # Initialize agents
 profile_agent = ProfileManagerAgent()
-meal_agent = MealPlannerAgent()
+meal_agent = MealPlannerAgent(use_o3_mini=True)  # Default to O3-mini
 workout_agent = WorkoutPlannerAgent()
 summary_agent = PlanSummaryAgent()
 
