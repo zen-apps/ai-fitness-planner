@@ -87,9 +87,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_complete_plan(
-        user_id: str, workout_days: int = 3
-    ) -> Dict[str, Any]:
+    def generate_complete_plan(user_id: str, workout_days: int = 3) -> Dict[str, Any]:
         """Generate complete fitness plan"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -112,9 +110,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_langgraph_plan(
-        user_id: str, workout_days: int = 3
-    ) -> Dict[str, Any]:
+    def generate_langgraph_plan(user_id: str, workout_days: int = 3) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -129,7 +125,7 @@ class FitnessAPI:
             response = requests.post(
                 f"{api_url}/v1/langgraph/generate-fitness-plan/",
                 json=request_data,
-                timeout=240,
+                timeout=360,
             )
             response.raise_for_status()
             return response.json()

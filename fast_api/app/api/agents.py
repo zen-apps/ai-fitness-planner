@@ -50,7 +50,7 @@ class UserProfile(BaseModel):
 
 class MealPlanRequest(BaseModel):
     user_id: str
-    meal_count: Optional[int] = 3
+    meal_count: Optional[int] = 5
     preferences: Optional[Dict[str, Any]] = {}
 
 
@@ -89,7 +89,7 @@ class MealFood(BaseModel):
 
 class Meal(BaseModel):
     meal_name: str = Field(
-        description="Name of the meal (e.g., 'Breakfast', 'Lunch', 'Dinner')"
+        description="Name of the meal (e.g., 'Breakfast', 'Snack 1', 'Lunch', 'Snack 2', 'Dinner')"
     )
     foods: List[MealFood] = Field(description="List of foods in this meal")
     total_macros: MealMacros = Field(description="Total macros for the entire meal")
@@ -279,7 +279,9 @@ class MealPlannerAgent:
 
     def __init__(self):
         self.llm = ChatOpenAI(
-            model="gpt-4o-mini", temperature=0.7, api_key=os.getenv("OPENAI_API_KEY")
+            # model="gpt-4o-mini", temperature=0.7, api_key=os.getenv("OPENAI_API_KEY")
+            model="o3-mini",
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
 
     @traceable(name="find_foods_by_criteria")
@@ -501,8 +503,10 @@ class MealPlannerAgent:
                 - Dietary Preferences: {profile.dietary_preferences or []}
                 
                 Create a complete 7-day meal plan with {request.meal_count} meals per day.
+                Two of the meals (Snack 1 and Snack 2) should be high protein snacks.
                 Focus on whole foods, meeting macro targets, and creating variety.
                 Use the available foods from the database when possible, but supplement with common whole foods.
+                Maximum of 5 different foods per meal.
                 
                 Calculate accurate portions and macros for each food item.
                 Ensure daily totals align closely with target macros.
@@ -669,9 +673,10 @@ class PlanSummaryAgent:
 
             # Convert to formatted string
             summary_text = f"""
-### {summary_structured.overview}
+### Overview
+{summary_structured.overview}
 
-Key Highlights
+### Key Highlights
 {chr(10).join(f"• {highlight}" for highlight in summary_structured.key_highlights)}
 
 ### How Your Plans Work Together
