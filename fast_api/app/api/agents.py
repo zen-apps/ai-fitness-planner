@@ -477,7 +477,7 @@ class MealPlannerAgent:
                 "nutrition": food.get("nutrition_enhanced", {}).get("per_100g", {}),
                 "brand": food.get("brandOwner", ""),
             }
-            for food in available_foods[:10]  # Use more foods for better variety
+            for food in available_foods[:100]  # Use more foods for better variety
         ]
 
         # Create meal plan using structured LLM
