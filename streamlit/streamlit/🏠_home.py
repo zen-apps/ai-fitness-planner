@@ -73,6 +73,5 @@ Use the sidebar to access different sections:
 - **👤 Profile Setup** - Create and manage your fitness profile
 - **📊 Complete Plan** - Get your full fitness plan with LangGraph
 - **🔍 Food Search** - Search the USDA nutrition database
-- **🧪 API Testing** - Test and debug API connections
 """
 )
