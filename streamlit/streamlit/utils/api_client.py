@@ -110,7 +110,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_langgraph_plan(user_id: str, workout_days: int = 3, use_o3_mini: bool = True) -> Dict[str, Any]:
+    def generate_langgraph_plan(user_id: str, use_o3_mini: bool = True) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -119,7 +119,7 @@ class FitnessAPI:
                 "generate_meal_plan": True,
                 "generate_workout_plan": True,
                 "meal_preferences": {"meal_count": 3},
-                "workout_preferences": {"days_per_week": workout_days},
+                "workout_preferences": {},  # Will use profile settings
                 "use_o3_mini": use_o3_mini,
             }
 

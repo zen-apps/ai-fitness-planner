@@ -33,9 +33,7 @@ with col1:
 
 with col2:
     st.subheader("💪 Workout Settings")
-    workout_days_per_week = st.selectbox(
-        "Workout Days per Week", [1, 2, 3, 4, 5, 6, 7], index=1
-    )
+    st.info("Workout frequency is configured in your profile settings")
 
 # AI Model Settings
 st.subheader("🤖 AI Model Settings")
@@ -54,7 +52,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
         progress_bar.progress(20)
 
         result = FitnessAPI.generate_langgraph_plan(
-            st.session_state.user_id, workout_days_per_week, use_o3_mini
+            st.session_state.user_id, use_o3_mini
         )
 
         if result:
