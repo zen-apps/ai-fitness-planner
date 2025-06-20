@@ -754,7 +754,7 @@ async def sample_usda_data(
     file_path: str = "./fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json",
     sample_size: int = 5000,
 ):
-    """Sample USDA Branded Foods data down to 5k foods and save to repo for quick MongoDB setup"""
+    """Sample USDA Branded Foods data evenly across macro categories from MongoDB and extract from USDA JSON"""
     
     def convert_decimal_in_dict(d):
         """Recursively convert all Decimal values to float in a dictionary"""
@@ -950,35 +950,84 @@ async def sample_usda_data(
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
 
-        logger.info(f"Starting to sample {sample_size} foods from USDA data...")
+        logger.info(f"Starting to sample {sample_size} foods evenly across macro categories from MongoDB...")
         
+        # Connect to MongoDB and get nutrition_enhanced foods by macro category
+        client = get_mongo_client()
+        db_name = os.getenv("MONGO_DB_NAME", "usda_nutrition")
+        db = client[db_name]
+        collection = db["branded_foods"]
+        
+        # Define macro categories for even sampling
+        macro_categories = ["high_protein", "high_fat", "high_carb", "balanced"]
+        foods_per_category = sample_size // len(macro_categories)  # 1250 foods per category
+        remainder = sample_size % len(macro_categories)
+        
+        logger.info(f"Sampling {foods_per_category} foods per macro category ({len(macro_categories)} categories)")
+        
+        # Sample evenly from each macro category
+        all_sampled_fdc_ids = []
+        category_counts = {}
+        
+        import random
+        random.seed(42)  # For reproducible sampling
+        
+        for i, category in enumerate(macro_categories):
+            # Calculate sample size for this category (add remainder to first categories)
+            category_sample_size = foods_per_category + (1 if i < remainder else 0)
+            
+            # Query MongoDB for foods in this macro category with nutrition_enhanced data
+            query = {
+                "nutrition_enhanced.macro_breakdown.primary_macro_category": category,
+                "nutrition_enhanced": {"$exists": True},
+                "fdcId": {"$exists": True}
+            }
+            
+            # Get all foods in this category and sample from them
+            foods_in_category = list(collection.find(query, {"fdcId": 1, "_id": 0}))
+            
+            if len(foods_in_category) == 0:
+                logger.warning(f"No foods found for macro category: {category}")
+                continue
+                
+            # Sample from available foods in this category  
+            if len(foods_in_category) <= category_sample_size:
+                sampled_foods = foods_in_category
+            else:
+                sampled_foods = random.sample(foods_in_category, category_sample_size)
+            
+            # Extract fdcIds
+            fdc_ids = [food["fdcId"] for food in sampled_foods]
+            all_sampled_fdc_ids.extend(fdc_ids)
+            category_counts[category] = len(fdc_ids)
+            
+            logger.info(f"Sampled {len(fdc_ids)} foods from {category} category (available: {len(foods_in_category)})")
+        
+        client.close()
+        
+        logger.info(f"Total fdcIds sampled: {len(all_sampled_fdc_ids)}")
+        logger.info(f"Category distribution: {category_counts}")
+        
+        # Now extract these specific foods from the USDA JSON file
+        logger.info("Extracting sampled foods from USDA JSON file...")
         sampled_foods = []
-        total_foods = 0
+        fdc_id_set = set(str(fdc_id) for fdc_id in all_sampled_fdc_ids)  # Convert to strings for comparison
         
-        # Use ijson to stream and sample the JSON
+        # Use ijson to stream and extract specific foods
         with open(file_path, "rb") as f:
             parser = ijson.items(f, "BrandedFoods.item")
             
-            import random
-            random.seed(42)  # For reproducible sampling
-            
-            # First pass: count total foods to determine sampling ratio
-            temp_foods = []
             for food in parser:
-                temp_foods.append(food)
-                total_foods += 1
-                
-                # Stop early if we have enough for sampling
-                if total_foods >= sample_size * 20:  # Sample from 20x the target size
-                    break
-            
-            logger.info(f"Found {total_foods} foods to sample from")
-            
-            # Sample foods
-            if total_foods <= sample_size:
-                sampled_foods = temp_foods
-            else:
-                sampled_foods = random.sample(temp_foods, sample_size)
+                food_fdc_id = str(food.get("fdcId", ""))
+                if food_fdc_id in fdc_id_set:
+                    sampled_foods.append(food)
+                    fdc_id_set.remove(food_fdc_id)  # Remove to avoid duplicates and speed up
+                    
+                    # Stop when we've found all foods
+                    if not fdc_id_set:
+                        break
+        
+        logger.info(f"Successfully extracted {len(sampled_foods)} foods from USDA JSON")
         
         # Process sampled foods with enhanced nutrition calculations
         logger.info("Processing sampled foods with enhanced nutrition calculations...")
@@ -1007,11 +1056,14 @@ async def sample_usda_data(
         
         sample_data = {
             "metadata": {
-                "total_original_foods": total_foods,
                 "sampled_foods": len(processed_foods),
                 "sample_date": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "source_file": file_path,
                 "random_seed": 42,
+                "sampling_method": "even_distribution_across_macro_categories",
+                "macro_categories": macro_categories,
+                "category_distribution": category_counts,
+                "foods_per_category_target": foods_per_category,
             },
             "BrandedFoods": processed_foods
         }
@@ -1023,9 +1075,9 @@ async def sample_usda_data(
         
         return {
             "status": "success",
-            "message": f"Successfully sampled {len(processed_foods)} foods from USDA data",
-            "original_food_count": total_foods,
+            "message": f"Successfully sampled {len(processed_foods)} foods evenly across macro categories",
             "sampled_food_count": len(processed_foods),
+            "category_distribution": category_counts,
             "output_file": str(output_file),
             "file_size_mb": round(os.path.getsize(output_file) / (1024 * 1024), 2),
             "sample_metadata": sample_data["metadata"],
