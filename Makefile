@@ -29,49 +29,6 @@ setup-full: up
 	docker-compose exec fast_api python /app/../scripts/setup_database.py --mode=full
 	@echo "✅ Full setup complete! Production-ready with 300K+ foods."
 
-# Database utilities
-db-stats:
-	@echo "📊 Getting database statistics..."
-	docker-compose exec fast_api python -c "
-import sys; sys.path.append('/app');
-import requests;
-try:
-    response = requests.get('http://localhost:8000/nutrition_setup/database_stats/');
-    result = response.json();
-    print(f'Database: {result[\"database_name\"]}');
-    print(f'Collections: {result[\"total_collections\"]}');
-    print(f'Database size: {result[\"database_size_mb\"]} MB');
-    for name, details in result[\"collection_details\"].items():
-        if isinstance(details, dict) and 'document_count' in details:
-            print(f'  {name}: {details[\"document_count\"]} documents');
-except Exception as e:
-    print(f'Error getting stats: {e}');
-    print('Make sure the API is running with: make up');
-"
-
-test-search:
-	@echo "🔍 Testing nutrition search..."
-	docker-compose exec fast_api python -c "
-import sys; sys.path.append('/app');
-import requests;
-try:
-    response = requests.get('http://localhost:8000/nutrition_setup/search_nutrition/?query=chicken&limit=1');
-    result = response.json();
-    print(f'Search query: {result[\"query\"]}');
-    print(f'Results found: {result[\"results_found\"]}');
-    if result[\"results\"]:
-        food = result[\"results\"][0];
-        print(f'Example food: {food[\"description\"]}');
-        if \"nutrition_enhanced\" in food:
-            macros = food[\"nutrition_enhanced\"][\"macro_breakdown\"];
-            print(f'  Protein: {macros[\"protein_percent\"]}%');
-            print(f'  Fat: {macros[\"fat_percent\"]}%');
-            print(f'  Carbs: {macros[\"carbs_percent\"]}%');
-            print(f'  Category: {macros[\"primary_macro_category\"]}');
-except Exception as e:
-    print(f'Error testing search: {e}');
-    print('Run setup first: make setup-demo or make setup-full');
-"
 
 # Development helpers  
 clean-db:
