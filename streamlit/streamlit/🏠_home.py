@@ -26,15 +26,16 @@ This application uses **LangChain Agents** to create personalized fitness and nu
 ### 🤖 How It Works:
 
 1. **Profile Manager Agent** - Analyzes your goals, body metrics, and preferences
-2. **Meal Planner Agent** - Creates nutrition plans using our USDA food database
-3. **Workout Planner Agent** - Designs training programs based on your goals
-4. **Summary Agent** - Combines everything into actionable guidance
+2. **Meal Planner Agent** - Creates detailed 7-day nutrition plans using our USDA food database  
+3. **Workout Planner Agent** - Designs comprehensive training programs with structured exercises
+4. **Summary Agent** - Combines everything into actionable guidance with motivational insights
 
 ### 🎯 Features:
 - **Personalized Macro Calculations** based on your goals (cut/bulk/maintenance)
-- **Smart Food Recommendations** from 300k+ USDA branded foods
-- **Adaptive Workout Plans** for strength, hypertrophy, or endurance
-- **Real-time Plan Generation** using GPT-4 powered agents
+- **Smart Food Recommendations** from 300k+ USDA branded foods with vector search
+- **Structured Meal Plans** with detailed foods, portions, and daily macro tracking
+- **Complete Workout Programs** with exercises, sets, reps, and progression strategies
+- **Real-time Plan Generation** using GPT-4 powered agents with structured output
 
 ### 🚀 Get Started:
 1. Set up your profile using the sidebar navigation
@@ -55,13 +56,13 @@ with col1:
     st.metric("Available Foods", "300k+", "USDA Database")
 
 with col2:
-    st.metric("Workout Styles", "3+", "Strength, Hypertrophy, Endurance")
+    st.metric("Workout Styles", "3+", "Structured Programs")
 
 with col3:
-    st.metric("Plan Types", "5+", "Cut, Bulk, Maintenance, Recomp")
+    st.metric("Plan Types", "5+", "7-Day Detailed Plans")
 
 with col4:
-    st.metric("AI Agents", "4", "LangChain Powered")
+    st.metric("AI Agents", "4", "Structured Output")
 
 # Navigation help
 st.markdown(

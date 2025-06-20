@@ -663,7 +663,7 @@ class PlanSummaryAgent:
 
             # Convert to formatted string
             summary_text = f"""
-## {summary_structured.overview}
+### {summary_structured.overview}
 
 ### Key Highlights
 {chr(10).join(f"• {highlight}" for highlight in summary_structured.key_highlights)}
