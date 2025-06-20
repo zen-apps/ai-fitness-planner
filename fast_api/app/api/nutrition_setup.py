@@ -747,3 +747,443 @@ async def import_usda_data(
         raise HTTPException(
             status_code=500, detail=f"Failed to import USDA data: {str(e)}"
         )
+
+
+@nutrition_setup.post("/sample_usda_data/")
+async def sample_usda_data(
+    file_path: str = "./fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json",
+    sample_size: int = 5000,
+):
+    """Sample USDA Branded Foods data down to 5k foods and save to repo for quick MongoDB setup"""
+    
+    def convert_decimal_in_dict(d):
+        """Recursively convert all Decimal values to float in a dictionary"""
+        for k, v in d.items():
+            if isinstance(v, Decimal):
+                d[k] = float(v)
+            elif isinstance(v, dict):
+                convert_decimal_in_dict(v)
+            elif isinstance(v, list):
+                for item in v:
+                    if isinstance(item, dict):
+                        convert_decimal_in_dict(item)
+        return d
+
+    def extract_nutrient_by_id(food_nutrients, nutrient_id):
+        """Extract specific nutrient amount by ID"""
+        for nutrient in food_nutrients:
+            if nutrient.get("nutrient", {}).get("id") == nutrient_id:
+                return nutrient.get("amount", 0)
+        return 0
+
+    def calculate_per_100g_values(food_item):
+        """Calculate per-100g nutrition values and add enhanced structure"""
+        serving_size = food_item.get("servingSize", 100)
+
+        if not serving_size or serving_size <= 0:
+            serving_size = 100
+
+        multiplier = 100 / serving_size
+        food_nutrients = food_item.get("foodNutrients", [])
+
+        nutrient_map = {
+            1008: "energy_kcal",
+            1003: "protein_g",
+            1004: "total_fat_g",
+            1005: "carbs_g",
+            1079: "fiber_g",
+            2000: "sugars_g",
+            1093: "sodium_mg",
+            1253: "cholesterol_mg",
+            1258: "saturated_fat_g",
+            1257: "trans_fat_g",
+        }
+
+        per_serving = {}
+        per_100g = {}
+
+        for nutrient_id, nutrient_name in nutrient_map.items():
+            amount = extract_nutrient_by_id(food_nutrients, nutrient_id)
+            per_serving[nutrient_name] = amount
+            per_100g[nutrient_name] = round(amount * multiplier, 2)
+
+        label_nutrients = food_item.get("labelNutrients", {})
+        enhanced_label = {}
+
+        label_mapping = {
+            "calories": "calories",
+            "fat": "fat_g",
+            "saturatedFat": "saturated_fat_g",
+            "transFat": "trans_fat_g",
+            "cholesterol": "cholesterol_mg",
+            "sodium": "sodium_mg",
+            "carbohydrates": "carbs_g",
+            "fiber": "fiber_g",
+            "sugars": "sugars_g",
+            "protein": "protein_g",
+        }
+
+        for label_key, standard_key in label_mapping.items():
+            if label_key in label_nutrients and "value" in label_nutrients[label_key]:
+                enhanced_label[standard_key] = label_nutrients[label_key]["value"]
+
+        food_item["nutrition_enhanced"] = {
+            "serving_info": {
+                "serving_size_g": serving_size,
+                "serving_description": food_item.get("householdServingFullText", ""),
+                "multiplier_to_100g": round(multiplier, 4),
+            },
+            "per_serving": per_serving,
+            "per_100g": per_100g,
+            "label_nutrients_enhanced": enhanced_label,
+            "nutrition_density_score": calculate_nutrition_density_score(per_100g),
+            "macro_breakdown": calculate_macro_breakdown(per_100g),
+        }
+
+        return food_item
+
+    def calculate_nutrition_density_score(per_100g):
+        """Calculate a simple nutrition density score"""
+        try:
+            protein = per_100g.get("protein_g", 0)
+            fiber = per_100g.get("fiber_g", 0)
+            calories = per_100g.get("energy_kcal", 1)
+
+            if calories > 0:
+                return round((protein + fiber) / calories * 100, 2)
+            return 0
+        except:
+            return 0
+
+    def calculate_macro_breakdown(per_100g):
+        """Calculate macronutrient percentages and categorization"""
+        try:
+            protein_g = per_100g.get("protein_g", 0)
+            fat_g = per_100g.get("total_fat_g", 0)
+            carbs_g = per_100g.get("carbs_g", 0)
+
+            calories_from_protein = protein_g * 4
+            calories_from_fat = fat_g * 9
+            calories_from_carbs = carbs_g * 4
+            total_calculated_kcal = (
+                calories_from_protein + calories_from_fat + calories_from_carbs
+            )
+
+            if total_calculated_kcal > 0:
+                pct_protein = (calories_from_protein / total_calculated_kcal) * 100
+                pct_fat = (calories_from_fat / total_calculated_kcal) * 100
+                pct_carbs = (calories_from_carbs / total_calculated_kcal) * 100
+
+                macro_categories = []
+                primary_macro = "balanced"
+
+                if pct_protein >= 40:
+                    macro_categories.append("high_protein")
+                    primary_macro = "high_protein"
+                if pct_fat >= 40:
+                    macro_categories.append("high_fat")
+                    primary_macro = "high_fat"
+                if pct_carbs >= 40:
+                    macro_categories.append("high_carb")
+                    primary_macro = "high_carb"
+
+                if len(macro_categories) > 1:
+                    max_pct = max(pct_protein, pct_fat, pct_carbs)
+                    if max_pct == pct_protein:
+                        primary_macro = "high_protein"
+                    elif max_pct == pct_fat:
+                        primary_macro = "high_fat"
+                    else:
+                        primary_macro = "high_carb"
+
+                return {
+                    "protein_percent": round(pct_protein, 1),
+                    "fat_percent": round(pct_fat, 1),
+                    "carbs_percent": round(pct_carbs, 1),
+                    "total_macro_kcal": round(total_calculated_kcal, 1),
+                    "calories_from_protein": round(calories_from_protein, 1),
+                    "calories_from_fat": round(calories_from_fat, 1),
+                    "calories_from_carbs": round(calories_from_carbs, 1),
+                    "macro_categories": macro_categories,
+                    "primary_macro_category": primary_macro,
+                    "is_high_protein": pct_protein >= 40,
+                    "is_high_fat": pct_fat >= 40,
+                    "is_high_carb": pct_carbs >= 40,
+                    "is_balanced": len(macro_categories) == 0,
+                }
+
+            return {
+                "protein_percent": 0,
+                "fat_percent": 0,
+                "carbs_percent": 0,
+                "total_macro_kcal": 0,
+                "calories_from_protein": 0,
+                "calories_from_fat": 0,
+                "calories_from_carbs": 0,
+                "macro_categories": [],
+                "primary_macro_category": "unknown",
+                "is_high_protein": False,
+                "is_high_fat": False,
+                "is_high_carb": False,
+                "is_balanced": False,
+            }
+        except Exception as e:
+            logger.warning(f"Error calculating macro breakdown: {str(e)}")
+            return {
+                "protein_percent": 0,
+                "fat_percent": 0,
+                "carbs_percent": 0,
+                "total_macro_kcal": 0,
+                "calories_from_protein": 0,
+                "calories_from_fat": 0,
+                "calories_from_carbs": 0,
+                "macro_categories": [],
+                "primary_macro_category": "unknown",
+                "is_high_protein": False,
+                "is_high_fat": False,
+                "is_high_carb": False,
+                "is_balanced": False,
+            }
+
+    try:
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+
+        logger.info(f"Starting to sample {sample_size} foods from USDA data...")
+        
+        sampled_foods = []
+        total_foods = 0
+        
+        # Use ijson to stream and sample the JSON
+        with open(file_path, "rb") as f:
+            parser = ijson.items(f, "BrandedFoods.item")
+            
+            import random
+            random.seed(42)  # For reproducible sampling
+            
+            # First pass: count total foods to determine sampling ratio
+            temp_foods = []
+            for food in parser:
+                temp_foods.append(food)
+                total_foods += 1
+                
+                # Stop early if we have enough for sampling
+                if total_foods >= sample_size * 20:  # Sample from 20x the target size
+                    break
+            
+            logger.info(f"Found {total_foods} foods to sample from")
+            
+            # Sample foods
+            if total_foods <= sample_size:
+                sampled_foods = temp_foods
+            else:
+                sampled_foods = random.sample(temp_foods, sample_size)
+        
+        # Process sampled foods with enhanced nutrition calculations
+        logger.info("Processing sampled foods with enhanced nutrition calculations...")
+        processed_foods = []
+        
+        for food in sampled_foods:
+            try:
+                # Convert all Decimal values to float recursively
+                food = convert_decimal_in_dict(food)
+                
+                # Add enhanced nutrition calculations
+                food = calculate_per_100g_values(food)
+                processed_foods.append(food)
+                
+            except Exception as e:
+                logger.warning(f"Error processing food item: {str(e)}")
+                # Still add the item without enhancement if calculation fails
+                processed_foods.append(food)
+        
+        # Create output directory if it doesn't exist
+        output_dir = Path("./fast_api/app/api/nutrition_data/samples")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save sampled data to file
+        output_file = output_dir / f"usda_sampled_{sample_size}_foods.json"
+        
+        sample_data = {
+            "metadata": {
+                "total_original_foods": total_foods,
+                "sampled_foods": len(processed_foods),
+                "sample_date": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "source_file": file_path,
+                "random_seed": 42,
+            },
+            "BrandedFoods": processed_foods
+        }
+        
+        with open(output_file, 'w') as f:
+            json.dump(sample_data, f, indent=2)
+        
+        logger.info(f"Sample data saved to {output_file}")
+        
+        return {
+            "status": "success",
+            "message": f"Successfully sampled {len(processed_foods)} foods from USDA data",
+            "original_food_count": total_foods,
+            "sampled_food_count": len(processed_foods),
+            "output_file": str(output_file),
+            "file_size_mb": round(os.path.getsize(output_file) / (1024 * 1024), 2),
+            "sample_metadata": sample_data["metadata"],
+            "sample_food_example": processed_foods[0] if processed_foods else None
+        }
+
+    except Exception as e:
+        logger.error(f"Error sampling USDA data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to sample USDA data: {str(e)}"
+        )
+
+
+@nutrition_setup.post("/import_sampled_data/")
+async def import_sampled_data(
+    sample_file: str = "./fast_api/app/api/nutrition_data/samples/usda_sampled_5000_foods.json",
+):
+    """Import sampled USDA data into MongoDB for quick setup"""
+    
+    try:
+        # Check if file exists
+        if not os.path.exists(sample_file):
+            raise HTTPException(status_code=404, detail=f"Sample file not found: {sample_file}")
+
+        # Get MongoDB connection
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+        branded_foods = db["branded_foods"]
+
+        logger.info("Creating enhanced indexes...")
+        # Create indexes with error handling to avoid conflicts
+        try:
+            # Basic indexes
+            branded_foods.create_index([("foodClass", pymongo.ASCENDING)])
+            branded_foods.create_index([("brandOwner", pymongo.ASCENDING)])
+            branded_foods.create_index([("foodCategory", pymongo.ASCENDING)])
+            branded_foods.create_index([("gtinUpc", pymongo.ASCENDING)])
+
+            # Create compound text index for search
+            branded_foods.create_index(
+                [("description", pymongo.TEXT), ("ingredients", pymongo.TEXT)],
+                name="search_text_index",
+            )
+
+            # Nutrition indexes
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.primary_macro_category",
+                        pymongo.ASCENDING,
+                    )
+                ]
+            )
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.is_high_protein",
+                        pymongo.ASCENDING,
+                    )
+                ]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_high_fat", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_high_carb", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.macro_breakdown.is_balanced", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.per_100g.protein_g", pymongo.DESCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.per_100g.energy_kcal", pymongo.ASCENDING)]
+            )
+            branded_foods.create_index(
+                [("nutrition_enhanced.nutrition_density_score", pymongo.DESCENDING)]
+            )
+            branded_foods.create_index(
+                [
+                    (
+                        "nutrition_enhanced.macro_breakdown.protein_percent",
+                        pymongo.DESCENDING,
+                    )
+                ]
+            )
+
+            logger.info("All indexes created successfully")
+
+        except Exception as e:
+            logger.warning(
+                f"Some indexes may already exist or failed to create: {str(e)}"
+            )
+            # Continue with import even if some indexes fail
+
+        # Load and import sampled data
+        logger.info(f"Loading sampled data from {sample_file}...")
+        
+        with open(sample_file, 'r') as f:
+            sample_data = json.load(f)
+        
+        foods = sample_data.get("BrandedFoods", [])
+        metadata = sample_data.get("metadata", {})
+        
+        logger.info(f"Importing {len(foods)} sampled foods...")
+        
+        batch_size = 1000
+        total_processed = 0
+        
+        for i in range(0, len(foods), batch_size):
+            batch = foods[i:i + batch_size]
+            try:
+                branded_foods.insert_many(batch)
+                total_processed += len(batch)
+                logger.info(f"Processed {total_processed}/{len(foods)} foods...")
+            except Exception as e:
+                logger.error(f"Error in batch: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail=f"Import failed: {str(e)}"
+                )
+
+        final_count = branded_foods.count_documents({})
+        enhanced_final_count = branded_foods.count_documents(
+            {"nutrition_enhanced": {"$exists": True}}
+        )
+        client.close()
+
+        logger.info("Sampled data import completed successfully!")
+
+        return {
+            "status": "success",
+            "message": "Sampled USDA data imported successfully",
+            "sample_metadata": metadata,
+            "total_documents_imported": total_processed,
+            "enhanced_documents": enhanced_final_count,
+            "final_document_count": final_count,
+            "source_file": sample_file,
+            "indexes_created": [
+                "foodClass",
+                "brandOwner", 
+                "foodCategory",
+                "gtinUpc",
+                "search_text_index (description + ingredients)",
+                "nutrition_enhanced.macro_breakdown.primary_macro_category",
+                "nutrition_enhanced.macro_breakdown.is_high_protein",
+                "nutrition_enhanced.macro_breakdown.is_high_fat",
+                "nutrition_enhanced.macro_breakdown.is_high_carb",
+                "nutrition_enhanced.macro_breakdown.is_balanced",
+                "nutrition_enhanced.per_100g.protein_g (desc)",
+                "nutrition_enhanced.per_100g.energy_kcal (asc)",
+                "nutrition_enhanced.nutrition_density_score (desc)",
+                "nutrition_enhanced.macro_breakdown.protein_percent (desc)",
+            ],
+        }
+
+    except Exception as e:
+        logger.error(f"Error importing sampled data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to import sampled data: {str(e)}"
+        )
