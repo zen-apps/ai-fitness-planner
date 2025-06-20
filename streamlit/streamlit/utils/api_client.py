@@ -88,7 +88,7 @@ class FitnessAPI:
 
     @staticmethod
     def generate_complete_plan(
-        user_id: str, meal_days: int = 7, workout_days: int = 3
+        user_id: str, workout_days: int = 3
     ) -> Dict[str, Any]:
         """Generate complete fitness plan"""
         api_url = FitnessAPI.get_api_url()
@@ -97,7 +97,6 @@ class FitnessAPI:
                 "user_id": user_id,
                 "meal_request": {
                     "user_id": user_id,
-                    "days": meal_days,
                     "meal_count": 3,
                 },
                 "workout_request": {"user_id": user_id, "days_per_week": workout_days},
@@ -114,7 +113,7 @@ class FitnessAPI:
 
     @staticmethod
     def generate_langgraph_plan(
-        user_id: str, meal_days: int = 7, workout_days: int = 3
+        user_id: str, workout_days: int = 3
     ) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
@@ -123,8 +122,7 @@ class FitnessAPI:
                 "user_id": user_id,
                 "generate_meal_plan": True,
                 "generate_workout_plan": True,
-                "days": meal_days,
-                "meal_preferences": {"days": meal_days, "meal_count": 3},
+                "meal_preferences": {"meal_count": 3},
                 "workout_preferences": {"days_per_week": workout_days},
             }
 

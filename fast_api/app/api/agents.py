@@ -47,7 +47,6 @@ class UserProfile(BaseModel):
 
 class MealPlanRequest(BaseModel):
     user_id: str
-    days: Optional[int] = 1
     meal_count: Optional[int] = 3
     preferences: Optional[Dict[str, Any]] = {}
 
@@ -338,7 +337,7 @@ class MealPlannerAgent:
             - Allergies: {allergies}
             - Dietary Preferences: {dietary_preferences}
             
-            Create a {days}-day meal plan with {meal_count} meals per day.
+            Create a 7-day meal plan with {meal_count} meals per day.
             Focus on whole foods and meeting macro targets.
             
             Available foods from database: {available_foods_sample}
@@ -376,7 +375,6 @@ class MealPlannerAgent:
                     "target_fat_g": profile.target_fat_g,
                     "allergies": profile.allergies or [],
                     "dietary_preferences": profile.dietary_preferences or [],
-                    "days": request.days,
                     "meal_count": request.meal_count,
                     "available_foods_sample": foods_sample,
                 }
@@ -385,7 +383,7 @@ class MealPlannerAgent:
             # Parse LLM response and structure meal plan
             meal_plan = {
                 "user_id": profile.user_id,
-                "days": request.days,
+                "days": 7,
                 "target_macros": {
                     "calories": profile.target_calories,
                     "protein_g": profile.target_protein_g,

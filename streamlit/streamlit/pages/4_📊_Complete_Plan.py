@@ -29,7 +29,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🍽️ Meal Plan Settings")
-    meal_plan_days = st.selectbox("Meal Plan Days Out", [3, 7, 14], index=1)
+    st.info("Meal plan will be generated for 7 days")
 
 with col2:
     st.subheader("💪 Workout Settings")
@@ -46,7 +46,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
         progress_bar.progress(20)
 
         result = FitnessAPI.generate_langgraph_plan(
-            st.session_state.user_id, meal_plan_days, workout_days_per_week
+            st.session_state.user_id, workout_days_per_week
         )
 
         if result:

@@ -60,7 +60,6 @@ class LangGraphFitnessRequest(BaseModel):
     workout_preferences: Optional[Dict[str, Any]] = Field(default_factory=dict)
     generate_meal_plan: bool = True
     generate_workout_plan: bool = True
-    days: Optional[int] = 7
     
 class LangGraphFitnessResponse(BaseModel):
     user_id: str
@@ -209,7 +208,6 @@ class FitnessWorkflow:
             meal_preferences = state.get("preferences", {}).get("meal_preferences", {})
             request = MealPlanRequest(
                 user_id=state["user_id"],
-                days=meal_preferences.get("days", 7),
                 meal_count=meal_preferences.get("meal_count", 3)
             )
             
@@ -217,7 +215,7 @@ class FitnessWorkflow:
             state["meal_plan"] = meal_plan
             
             state["messages"].append(
-                SystemMessage(content=f"Meal plan generated for {request.days} days")
+                SystemMessage(content="Meal plan generated for 7 days")
             )
             
         except Exception as e:
@@ -409,8 +407,7 @@ async def generate_quick_plan(
     age: int = 30,
     weight: float = 70.0,
     height: float = 175.0,
-    fitness_goal: str = "maintenance",
-    days: int = 7
+    fitness_goal: str = "maintenance"
 ):
     """Quick fitness plan generation with minimal input"""
     try:
@@ -428,7 +425,6 @@ async def generate_quick_plan(
         request = LangGraphFitnessRequest(
             user_id=user_id,
             user_profile=profile,
-            days=days,
             generate_meal_plan=True,
             generate_workout_plan=True
         )
