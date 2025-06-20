@@ -23,13 +23,6 @@ def ft_in_to_cm(feet, inches):
     total_inches = feet * 12 + inches
     return total_inches * 2.54
 
-def cm_to_inches(cm):
-    """Convert centimeters to inches"""
-    return cm / 2.54
-
-def inches_to_cm(inches):
-    """Convert inches to centimeters"""
-    return inches * 2.54
 
 # Configure page
 st.set_page_config(

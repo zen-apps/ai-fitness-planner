@@ -1,13 +1,16 @@
 import streamlit as st
 import requests
 import os
-from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_sidebar, API_BASE_URL
+from utils.api_client import (
+    FitnessAPI,
+    init_session_state,
+    setup_api_settings_sidebar,
+    API_BASE_URL,
+)
 
 # Configure page
 st.set_page_config(
-    page_title="API Testing - AI Fitness Planner",
-    page_icon="🧪",
-    layout="wide"
+    page_title="API Testing - AI Fitness Planner", page_icon="🧪", layout="wide"
 )
 
 # Initialize session state and setup sidebar
@@ -99,24 +102,52 @@ if st.button("Test Nutrition Database"):
     with st.spinner("Testing nutrition database..."):
         try:
             current_url = FitnessAPI.get_api_url()
-            test_query = {
-                "query": "chicken breast",
-                "limit": 3,
-                "similarity_threshold": 0.6,
-            }
-            response = requests.post(
-                f"{current_url}/v1/nutrition_search/search_nutrition_semantic/",
-                json=test_query,
-                timeout=30,
+
+            # First check if vector index exists
+            status_response = requests.get(
+                f"{current_url}/v1/nutrition_search/vector_index_stats/",
+                timeout=10,
             )
-            if response.status_code == 200:
-                result = response.json()
-                st.success("✅ Nutrition database working!")
-                st.write(f"Found {result.get('results_found', 0)} results")
-                if result.get("results"):
-                    st.json(result["results"][0])  # Show first result
+
+            if status_response.status_code == 200:
+                status = status_response.json()
+                if status.get("status") == "not_found":
+                    st.warning(
+                        "⚠️ Vector index not found. This is normal for first-time setup."
+                    )
+                    st.info(
+                        "💡 The vector index needs to be created on the backend first."
+                    )
+                    st.write("**Status:** Vector index not initialized")
+                    st.write(
+                        "**Action needed:** Backend admin needs to run vector index creation"
+                    )
+                else:
+                    # Index exists, test search
+                    test_query = {
+                        "query": "chicken breast",
+                        "limit": 3,
+                        "similarity_threshold": 0.6,
+                    }
+                    response = requests.post(
+                        f"{current_url}/v1/nutrition_search/search_nutrition_semantic/",
+                        json=test_query,
+                        timeout=30,
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        st.success("✅ Nutrition database working!")
+                        st.write(f"Found {result.get('results_found', 0)} results")
+                        st.write(f"Index size: {status.get('index_size', 'Unknown')}")
+                        if result.get("results"):
+                            st.json(result["results"][0])  # Show first result
+                    else:
+                        st.error(f"❌ Nutrition search failed: {response.status_code}")
+                        if response.text:
+                            st.code(response.text)
             else:
-                st.error(f"❌ Nutrition database failed: {response.status_code}")
+                st.error(f"❌ Cannot check index status: {status_response.status_code}")
+
         except Exception as e:
             st.error(f"❌ Nutrition database error: {str(e)}")
 
@@ -128,9 +159,7 @@ env_info = {
     "Backend Host (env)": os.getenv("BACKEND_HOST", "Not set"),
     "Environment": os.getenv("ENVIRONMENT", "Not set"),
     "Python Version": "3.x",
-    "Streamlit Version": (
-        st.__version__ if hasattr(st, "__version__") else "Unknown"
-    ),
+    "Streamlit Version": (st.__version__ if hasattr(st, "__version__") else "Unknown"),
 }
 
 for key, value in env_info.items():

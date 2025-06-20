@@ -564,13 +564,13 @@ async def test_workflow():
                 fitness_goal="bulk",
                 activity_level="active",
             ),
-            days=3,
             generate_meal_plan=True,
             generate_workout_plan=True,
+            use_o3_mini=False,
         )
 
-        # Create workflow instance with default O3-mini for testing
-        workflow = FitnessWorkflow(use_o3_mini=True)
+        # Create workflow instance with gpt-4o-mini for faster testing
+        workflow = FitnessWorkflow(use_o3_mini=False)
         result = await workflow.execute_workflow(test_request)
 
         # Return a summary without the full plans for testing
