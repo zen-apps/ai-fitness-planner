@@ -33,7 +33,9 @@ with col1:
 
 with col2:
     st.subheader("💪 Workout Settings")
-    workout_days_per_week = st.selectbox("Workout Days per Week", [2, 3, 4, 5], index=1)
+    workout_days_per_week = st.selectbox(
+        "Workout Days per Week", [1, 2, 3, 4, 5, 6, 7], index=1
+    )
 
 # Generate button
 if st.button("🚀 Generate Complete Plan", use_container_width=True, type="primary"):
