@@ -33,7 +33,16 @@ with col1:
 
 with col2:
     st.subheader("💪 Workout Settings")
-    st.info("Workout frequency is configured in your profile settings")
+
+    # Get current profile to display workout frequency
+    current_profile = st.session_state.get("current_profile") or FitnessAPI.get_profile(
+        st.session_state.user_id
+    )
+    if current_profile and current_profile.get("workout_frequency"):
+        workout_freq = current_profile["workout_frequency"]
+        st.info(f"Workout frequency: {workout_freq} days per week")
+    else:
+        st.info("Workout frequency is configured in your profile settings")
 
 # AI Model Settings
 st.subheader("🤖 AI Model Settings")
@@ -46,9 +55,9 @@ with col1:
 
 with col2:
     use_full_database = st.checkbox(
-        "Use full USDA database", 
+        "Use full USDA database",
         value=False,
-        help="Use the complete USDA database vs the sample dataset. Requires full database to be imported."
+        help="Use the complete USDA database vs the sample dataset. Requires full database to be imported.",
     )
 
 # Database availability check
@@ -130,7 +139,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
 
             # Display daily meal plans in structured format
             if meal_plan.get("daily_plans"):
-                with st.expander("📋 7-Day Detailed Meal Plan", expanded=False):
+                with st.expander("📋 7-Day Detailed Meal Plan", expanded=True):
                     for day_plan in meal_plan["daily_plans"]:
                         day_name = (
                             day_plan.get("day_name")
@@ -242,7 +251,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
 
             # Display weekly schedule in structured format
             if workout_plan.get("weekly_schedule"):
-                with st.expander("🏋️‍♂️ Weekly Workout Schedule", expanded=False):
+                with st.expander("🏋️‍♂️ Weekly Workout Schedule", expanded=True):
                     for workout_day in workout_plan["weekly_schedule"]:
                         day_name = (
                             workout_day.get("day_name")
