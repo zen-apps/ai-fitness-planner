@@ -20,7 +20,5 @@ langchain-anthropic==0.3.7
 langchain-google-genai==2.0.9
 ijson==3.4.0
 langsmith==0.3.45
-tqdm
+tqdm==4.67.1
 psutil==7.0.0
-# Development dependencies (move to dev-requirements.txt)
-# pytest==7.2.2
