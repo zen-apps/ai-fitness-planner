@@ -39,7 +39,8 @@ class NutritionQuery(BaseModel):
         default=0.5, description="Minimum similarity score (0-1)"
     )
     use_full_database: bool = Field(
-        default=False, description="Use full database (branded_foods) vs sample (branded_foods_sample)"
+        default=False,
+        description="Use full database (branded_foods) vs sample (branded_foods_sample)",
     )
 
 
@@ -92,7 +93,7 @@ def get_embeddings_model():
 def get_vector_store(use_full_database: bool = False):
     """Get the appropriate FAISS vector store based on database selection"""
     global vector_store_full, vector_store_sample
-    
+
     if use_full_database:
         if vector_store_full is None:
             # Try to load full database vector store
@@ -103,7 +104,9 @@ def get_vector_store(use_full_database: bool = False):
                     vector_store_path, embeddings, allow_dangerous_deserialization=True
                 )
             else:
-                logger.warning("Full database vector index not found. Falling back to sample.")
+                logger.warning(
+                    "Full database vector index not found. Falling back to sample."
+                )
                 return get_vector_store(use_full_database=False)
         return vector_store_full
     else:
@@ -121,7 +124,9 @@ def get_vector_store(use_full_database: bool = False):
                 if os.path.exists(vector_store_path):
                     embeddings = get_embeddings_model()
                     vector_store_sample = FAISS.load_local(
-                        vector_store_path, embeddings, allow_dangerous_deserialization=True
+                        vector_store_path,
+                        embeddings,
+                        allow_dangerous_deserialization=True,
                     )
         return vector_store_sample
 
@@ -188,7 +193,7 @@ async def search_nutrition_semantic(query_data: NutritionQuery):
     try:
         # Get the appropriate vector store based on database selection
         vector_store = get_vector_store(use_full_database=query_data.use_full_database)
-        
+
         if vector_store is None:
             db_type = "full" if query_data.use_full_database else "sample"
             raise HTTPException(
@@ -368,7 +373,9 @@ async def search_nutrition_hybrid(
         # Get traditional MongoDB search results
         client = get_mongo_client()
         db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        collection_name = "branded_foods" if use_full_database else "branded_foods_sample"
+        collection_name = (
+            "branded_foods" if use_full_database else "branded_foods_sample"
+        )
         branded_foods = db[collection_name]
 
         # Traditional search query
@@ -500,7 +507,7 @@ async def create_vector_index_full(
         index_path="./nutrition_faiss_index_full",
         batch_size=batch_size,
         max_documents=max_documents,
-        recreate=recreate
+        recreate=recreate,
     )
 
 
@@ -515,7 +522,7 @@ async def create_vector_index_sample(
         index_path="./nutrition_faiss_index_sample",
         batch_size=batch_size,
         max_documents=max_documents,
-        recreate=recreate
+        recreate=recreate,
     )
 
 
@@ -524,7 +531,7 @@ async def _create_vector_index(
     index_path: str,
     batch_size: int = 1000,
     max_documents: Optional[int] = None,
-    recreate: bool = False
+    recreate: bool = False,
 ):
     """Helper function to create FAISS vector index from MongoDB data"""
     start_time = datetime.now()
@@ -554,8 +561,8 @@ async def _create_vector_index(
         total_docs = collection.count_documents({})
         if total_docs == 0:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Collection '{collection_name}' not found or empty. Please import data first."
+                status_code=404,
+                detail=f"Collection '{collection_name}' not found or empty. Please import data first.",
             )
 
         # Get embeddings model
@@ -564,7 +571,9 @@ async def _create_vector_index(
         if max_documents:
             total_docs = min(total_docs, max_documents)
 
-        logger.info(f"Processing {total_docs} documents from {collection_name} for vector indexing...")
+        logger.info(
+            f"Processing {total_docs} documents from {collection_name} for vector indexing..."
+        )
 
         documents = []
         processed_count = 0
@@ -648,7 +657,7 @@ async def _create_vector_index(
 
         # Process remaining documents
         if batch:
-            if 'vector_store' not in locals():
+            if "vector_store" not in locals():
                 logger.info(
                     f"Creating FAISS index with remaining {len(batch)} documents..."
                 )
@@ -692,49 +701,154 @@ async def _create_vector_index(
         )
 
 
-@nutrition_search.get("/vector_index_status/")
-async def get_vector_index_status():
-    """Get status of both vector indices"""
+import threading
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+import psutil
+import gc
+
+# Global variables with thread locks
+vector_store_full = None
+vector_store_sample = None
+embeddings_model = None
+mongo_client = None
+_vector_store_lock = threading.Lock()
+
+# Index status tracking
+index_status = {
+    "full_database": {
+        "loading": False,
+        "loaded": False,
+        "error": None,
+        "last_check": None,
+    },
+    "sample_database": {
+        "loading": False,
+        "loaded": False,
+        "error": None,
+        "last_check": None,
+    },
+}
+
+
+class IndexStatus(BaseModel):
+    exists: bool
+    loaded: bool
+    loading: bool
+    index_size: Optional[int] = None
+    embedding_dimension: Optional[int] = None
+    file_size_mb: Optional[float] = None
+    last_modified: Optional[str] = None
+    error: Optional[str] = None
+    memory_usage_mb: Optional[float] = None
+
+
+class VectorIndexStatusResponse(BaseModel):
+    full_database: IndexStatus
+    sample_database: IndexStatus
+    legacy_index: IndexStatus
+    system_info: Dict[str, Any]
+
+
+def check_file_info(path: str) -> Dict[str, Any]:
+    """Get file system information about an index"""
+    if not os.path.exists(path):
+        return {"exists": False}
+
     try:
-        status = {
-            "full_database": {
-                "index_path": "./nutrition_faiss_index_full",
-                "exists": os.path.exists("./nutrition_faiss_index_full"),
-                "collection_name": "branded_foods"
-            },
-            "sample_database": {
-                "index_path": "./nutrition_faiss_index_sample",
-                "exists": os.path.exists("./nutrition_faiss_index_sample"),
-                "collection_name": "branded_foods_sample"
-            },
-            "legacy_index": {
-                "index_path": "./nutrition_faiss_index",
-                "exists": os.path.exists("./nutrition_faiss_index"),
-                "note": "Legacy index - used as fallback for sample database"
-            }
+        stat = os.stat(path)
+        return {
+            "exists": True,
+            "file_size_mb": stat.st_size / (1024 * 1024),
+            "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
         }
-        
-        # Get index sizes if they exist
-        for db_type in ["full_database", "sample_database"]:
-            if status[db_type]["exists"]:
-                try:
-                    embeddings = get_embeddings_model()
-                    vector_store = FAISS.load_local(
-                        status[db_type]["index_path"], 
-                        embeddings, 
-                        allow_dangerous_deserialization=True
-                    )
-                    status[db_type]["index_size"] = vector_store.index.ntotal
-                    status[db_type]["embedding_dimension"] = vector_store.index.d
-                except Exception as e:
-                    status[db_type]["error"] = str(e)
-        
-        return status
-        
+    except Exception as e:
+        return {"exists": True, "error": f"Failed to get file info: {e}"}
+
+
+@nutrition_search.get("/vector_index_status/", response_model=VectorIndexStatusResponse)
+async def get_vector_index_status():
+    """Get comprehensive status of all vector indices with performance optimization"""
+    try:
+        logger.info("Checking vector index status...")
+
+        # System information
+        memory = psutil.virtual_memory()
+        system_info = {
+            "memory_usage_percent": memory.percent,
+            "memory_available_gb": memory.available / (1024**3),
+            "memory_total_gb": memory.total / (1024**3),
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        # Define all index paths
+        indices = {
+            "full_database": "./nutrition_faiss_index_full",
+            "sample_database": "./nutrition_faiss_index_sample",
+            "legacy_index": "./nutrition_faiss_index",
+        }
+
+        status_response = {"system_info": system_info}
+
+        # Check each index
+        for db_type, index_path in indices.items():
+            logger.debug(f"Checking {db_type} at {index_path}")
+
+            # Get file system info
+            file_info = check_file_info(index_path)
+
+            # Base status
+            status = IndexStatus(
+                exists=file_info["exists"],
+                loaded=False,
+                loading=False,
+                file_size_mb=file_info.get("file_size_mb"),
+                last_modified=file_info.get("last_modified"),
+                error=file_info.get("error"),
+            )
+
+            if file_info["exists"] and not file_info.get("error"):
+                # Check if this is a tracked index
+                if db_type in index_status:
+                    status.loading = index_status[db_type]["loading"]
+                    status.loaded = index_status[db_type]["loaded"]
+                    status.error = index_status[db_type]["error"]
+
+                # Try to get index info WITHOUT loading the full index
+                if status.loaded:
+                    try:
+                        vector_store = None
+                        if db_type == "full_database":
+                            with _vector_store_lock:
+                                vector_store = vector_store_full
+                        elif db_type == "sample_database":
+                            with _vector_store_lock:
+                                vector_store = vector_store_sample
+
+                        if vector_store is not None:
+                            status.index_size = vector_store.index.ntotal
+                            status.embedding_dimension = vector_store.index.d
+                            # Estimate memory usage
+                            if status.index_size and status.embedding_dimension:
+                                # Rough estimate: 4 bytes per float * dimensions * vectors + overhead
+                                estimated_mb = (
+                                    status.index_size * status.embedding_dimension * 4
+                                ) / (1024**2)
+                                status.memory_usage_mb = estimated_mb
+
+                    except Exception as e:
+                        logger.warning(
+                            f"Could not get loaded index info for {db_type}: {e}"
+                        )
+                        status.error = f"Loaded but could not retrieve info: {str(e)}"
+
+            status_response[db_type] = status
+
+        logger.info("Vector index status check completed successfully")
+        return VectorIndexStatusResponse(**status_response)
+
     except Exception as e:
         logger.error(f"Error getting vector index status: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get index status: {str(e)}"
         )
-
-
