@@ -170,6 +170,38 @@ def display_hybrid_results(results):
                     st.metric("🎯 Nutrition Density", f"{nutrition_density:.1f}")
 
 
+# Database selection
+st.subheader("📊 Database Settings")
+use_full_database = st.checkbox(
+    "Use full USDA database", 
+    value=False,
+    help="Use the complete USDA database vs the sample dataset. Requires full database to be imported."
+)
+
+# Database availability check
+if use_full_database:
+    try:
+        db_status = FitnessAPI.check_database_availability()
+        if not db_status.get("full_database", {}).get("available", False):
+            st.error(
+                "❌ Full USDA database is not available. Only sampled USDA data is available. "
+                "Please import the full database first or uncheck 'Use full USDA database'."
+            )
+            use_full_database = False  # Override to use sample
+        else:
+            st.success(f"✅ Full database available with {db_status['full_database']['document_count']:,} foods")
+    except Exception as e:
+        st.warning(f"⚠️ Could not check database availability: {str(e)}")
+        use_full_database = False
+else:
+    try:
+        db_status = FitnessAPI.check_database_availability()
+        sample_count = db_status.get("sample_database", {}).get("document_count", 0)
+        if sample_count > 0:
+            st.info(f"📋 Using sample database with {sample_count:,} foods")
+    except:
+        pass
+
 # Search method selection
 search_method = st.radio(
     "Search Method:",
@@ -265,6 +297,7 @@ elif search_method == "🧠 Semantic Search":
                     "macro_goals": {},
                     "limit": semantic_limit,
                     "similarity_threshold": similarity_threshold,
+                    "use_full_database": use_full_database,
                 }
 
                 response = requests.post(
@@ -355,6 +388,7 @@ elif search_method == "🎯 Advanced Filters":
                     "calories_max": calories_max,
                     "limit": hybrid_limit,
                     "semantic_weight": semantic_weight,
+                    "use_full_database": use_full_database,
                 }
 
                 response = requests.get(

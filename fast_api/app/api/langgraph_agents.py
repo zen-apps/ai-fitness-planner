@@ -64,6 +64,7 @@ class LangGraphFitnessRequest(BaseModel):
     generate_meal_plan: bool = True
     generate_workout_plan: bool = True
     use_o3_mini: bool = True
+    use_full_database: bool = False
 
 
 class LangGraphFitnessResponse(BaseModel):
@@ -81,12 +82,13 @@ class LangGraphFitnessResponse(BaseModel):
 class FitnessWorkflow:
     """LangGraph workflow orchestrator for fitness planning"""
 
-    def __init__(self, use_o3_mini: bool = True):
+    def __init__(self, use_o3_mini: bool = True, use_full_database: bool = False):
         self.profile_agent = ProfileManagerAgent()
-        self.meal_agent = MealPlannerAgent(use_o3_mini=use_o3_mini)
+        self.meal_agent = MealPlannerAgent(use_o3_mini=use_o3_mini, use_full_database=use_full_database)
         self.workout_agent = WorkoutPlannerAgent()
         self.summary_agent = PlanSummaryAgent()
         self.use_o3_mini = use_o3_mini
+        self.use_full_database = use_full_database
 
         # Initialize LLM for coordination
         self.coordinator_llm = ChatOpenAI(
@@ -424,8 +426,8 @@ fitness_workflow = None
 async def generate_fitness_plan_workflow(request: LangGraphFitnessRequest):
     """Generate complete fitness plan using LangGraph workflow orchestration"""
     try:
-        # Create workflow instance with the requested model preference
-        workflow = FitnessWorkflow(use_o3_mini=request.use_o3_mini)
+        # Create workflow instance with the requested model and database preferences
+        workflow = FitnessWorkflow(use_o3_mini=request.use_o3_mini, use_full_database=request.use_full_database)
         result = await workflow.execute_workflow(request)
         return LangGraphFitnessResponse(**result)
 

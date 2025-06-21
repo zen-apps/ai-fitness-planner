@@ -1047,7 +1047,7 @@ async def sample_usda_data(
 async def import_sampled_data(
     sample_file: str = "./fast_api/app/api/nutrition_data/samples/usda_sampled_5000_foods.json",
 ):
-    """Import sampled USDA data into MongoDB for quick setup"""
+    """Import sampled USDA data into MongoDB 'branded_foods_sample' collection for quick setup"""
 
     try:
         # Check if file exists
@@ -1059,7 +1059,7 @@ async def import_sampled_data(
         # Get MongoDB connection
         client = get_mongo_client()
         db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        branded_foods = db["branded_foods"]
+        branded_foods = db["branded_foods_sample"]
 
         logger.info("Creating enhanced indexes...")
         # Create indexes with error handling to avoid conflicts
@@ -1190,4 +1190,44 @@ async def import_sampled_data(
         logger.error(f"Error importing sampled data: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to import sampled data: {str(e)}"
+        )
+
+
+@nutrition_setup.get("/database_availability/")
+async def check_database_availability():
+    """Check which databases are available (full vs sample)"""
+    try:
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+        
+        # Check if full database exists and has data
+        full_collection = db["branded_foods"]
+        full_count = full_collection.count_documents({})
+        full_available = full_count > 0
+        
+        # Check if sample database exists and has data
+        sample_collection = db["branded_foods_sample"]
+        sample_count = sample_collection.count_documents({})
+        sample_available = sample_count > 0
+        
+        client.close()
+        
+        return {
+            "full_database": {
+                "available": full_available,
+                "document_count": full_count,
+                "collection_name": "branded_foods"
+            },
+            "sample_database": {
+                "available": sample_available,
+                "document_count": sample_count,
+                "collection_name": "branded_foods_sample"
+            },
+            "recommendation": "full" if full_available else "sample" if sample_available else "none"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking database availability: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to check database availability: {str(e)}"
         )

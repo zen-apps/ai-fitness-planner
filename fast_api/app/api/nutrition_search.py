@@ -38,6 +38,9 @@ class NutritionQuery(BaseModel):
     similarity_threshold: float = Field(
         default=0.5, description="Minimum similarity score (0-1)"
     )
+    use_full_database: bool = Field(
+        default=False, description="Use full database (branded_foods) vs sample (branded_foods_sample)"
+    )
 
 
 class VectorSearchResponse(BaseModel):
@@ -141,7 +144,12 @@ def create_food_text_representation(food_item: Dict) -> str:
     "/search_nutrition_semantic/", response_model=VectorSearchResponse
 )
 async def search_nutrition_semantic(query_data: NutritionQuery):
-    """Semantic search using FAISS vector store"""
+    """Semantic search using FAISS vector store
+    
+    Note: Vector search currently only supports the collection that was indexed.
+    The use_full_database parameter is passed but may not affect results if
+    the vector index was built on a different collection.
+    """
     global vector_store
 
     start_time = datetime.now()
@@ -301,6 +309,7 @@ async def search_nutrition_hybrid(
     calories_max: float = 999,
     limit: int = 10,
     semantic_weight: float = 0.7,
+    use_full_database: bool = False,
 ):
     """Hybrid search combining traditional MongoDB queries with semantic search"""
 
@@ -323,6 +332,7 @@ async def search_nutrition_hybrid(
             },
             limit=limit * 2,  # Get more results for hybrid scoring
             similarity_threshold=0.5,  # Lower threshold for hybrid approach
+            use_full_database=use_full_database,
         )
 
         # Get semantic search results
@@ -331,7 +341,8 @@ async def search_nutrition_hybrid(
         # Get traditional MongoDB search results
         client = get_mongo_client()
         db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        branded_foods = db["branded_foods"]
+        collection_name = "branded_foods" if use_full_database else "branded_foods_sample"
+        branded_foods = db[collection_name]
 
         # Traditional search query
         mongo_query = {

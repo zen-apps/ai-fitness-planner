@@ -37,9 +37,34 @@ with col2:
 
 # AI Model Settings
 st.subheader("🤖 AI Model Settings")
-use_o3_mini = st.checkbox(
-    "Use O3-mini Reasoning (takes longer, better results)", value=False
-)
+col1, col2 = st.columns(2)
+
+with col1:
+    use_o3_mini = st.checkbox(
+        "Use O3-mini Reasoning (takes longer, better results)", value=False
+    )
+
+with col2:
+    use_full_database = st.checkbox(
+        "Use full USDA database", 
+        value=False,
+        help="Use the complete USDA database vs the sample dataset. Requires full database to be imported."
+    )
+
+# Database availability check
+if use_full_database:
+    # Check if full database is available
+    try:
+        db_status = FitnessAPI.check_database_availability()
+        if not db_status.get("full_database", {}).get("available", False):
+            st.error(
+                "❌ Full USDA database is not available. Only sampled USDA data is available. "
+                "Please import the full database first or uncheck 'Use full USDA database'."
+            )
+            use_full_database = False  # Override to use sample
+    except Exception as e:
+        st.warning(f"⚠️ Could not check database availability: {str(e)}")
+        use_full_database = False
 
 # Generate button
 if st.button("🚀 Generate Complete Plan", use_container_width=True, type="primary"):
@@ -52,7 +77,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
         progress_bar.progress(20)
 
         result = FitnessAPI.generate_langgraph_plan(
-            st.session_state.user_id, use_o3_mini
+            st.session_state.user_id, use_o3_mini, use_full_database
         )
 
         if result:

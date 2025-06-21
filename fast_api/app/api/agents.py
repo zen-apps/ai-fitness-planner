@@ -275,7 +275,9 @@ class ProfileManagerAgent:
 class MealPlannerAgent:
     """Generates personalized meal plans using nutrition database"""
 
-    def __init__(self, use_o3_mini: bool = True):
+    def __init__(self, use_o3_mini: bool = True, use_full_database: bool = False):
+        self.collection_name = "branded_foods" if use_full_database else "branded_foods_sample"
+        
         if use_o3_mini:
             self.llm = ChatOpenAI(
                 model="o3-mini",
@@ -325,6 +327,7 @@ class MealPlannerAgent:
                 macro_goals=macro_goals,
                 limit=AVAILABLE_FOODS_COUNT,
                 similarity_threshold=0.5,
+                use_full_database=(self.collection_name == "branded_foods"),
             )
 
             # Use existing vector search
@@ -394,7 +397,7 @@ class MealPlannerAgent:
         try:
             client = get_mongo_client()
             db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-            branded_foods = db["branded_foods"]
+            branded_foods = db[self.collection_name]
 
             query = {}
 
@@ -755,6 +758,7 @@ async def generate_complete_fitness_plan(
     user_id: str,
     meal_request: Optional[MealPlanRequest] = None,
     workout_request: Optional[WorkoutPlanRequest] = None,
+    use_full_database: bool = False,
 ):
     """Generate complete fitness plan with meal and workout plans plus summary"""
     try:
@@ -778,8 +782,11 @@ async def generate_complete_fitness_plan(
         if not workout_request:
             workout_request = WorkoutPlanRequest(user_id=user_id)
 
+        # Create meal agent with appropriate database setting
+        dynamic_meal_agent = MealPlannerAgent(use_o3_mini=True, use_full_database=use_full_database)
+        
         # Generate both plans
-        meal_plan = await meal_agent.generate_meal_plan(profile, meal_request)
+        meal_plan = await dynamic_meal_agent.generate_meal_plan(profile, meal_request)
         workout_plan = await workout_agent.generate_workout_plan(
             profile, workout_request
         )

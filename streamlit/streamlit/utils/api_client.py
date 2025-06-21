@@ -110,7 +110,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_langgraph_plan(user_id: str, use_o3_mini: bool = True) -> Dict[str, Any]:
+    def generate_langgraph_plan(user_id: str, use_o3_mini: bool = True, use_full_database: bool = False) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -121,6 +121,7 @@ class FitnessAPI:
                 "meal_preferences": {"meal_count": 3},
                 "workout_preferences": {},  # Will use profile settings
                 "use_o3_mini": use_o3_mini,
+                "use_full_database": use_full_database,
             }
 
             response = requests.post(
@@ -149,6 +150,21 @@ class FitnessAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             st.error(f"Error searching nutrition: {str(e)}")
+            return {}
+
+    @staticmethod
+    def check_database_availability() -> Dict[str, Any]:
+        """Check which databases are available (full vs sample)"""
+        api_url = FitnessAPI.get_api_url()
+        try:
+            response = requests.get(
+                f"{api_url}/v1/nutrition_setup/database_availability/",
+                timeout=10,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error checking database availability: {str(e)}")
             return {}
 
 
