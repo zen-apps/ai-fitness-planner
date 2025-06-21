@@ -63,13 +63,14 @@ else:
     st.success(f"✅ Connected to API at {current_api_url}")
 
 # Check if profile exists
-existing_profile = FitnessAPI.get_profile(st.session_state.user_id)
+with st.spinner("Checking for existing profile..."):
+    existing_profile = FitnessAPI.get_profile(st.session_state.user_id)
 
 if existing_profile:
     st.success("✅ Profile found! You can update it below.")
     st.session_state.current_profile = existing_profile
 else:
-    st.info("🆕 Create your profile to get started.")
+    st.info("🆕 No profile found. Let's create your first profile to get started with personalized fitness planning!")
 
 with st.form("profile_form"):
     st.subheader("Basic Information")

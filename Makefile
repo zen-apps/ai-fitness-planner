@@ -71,7 +71,8 @@ help:
 
 .PHONY: up logs logs-be logs-fe setup-demo setup-full db-stats test-search clean-db help
 
-# Quick setup command for new users
-install: setup-demo
-	@echo "🎉 Installation complete! Your AI Fitness Planner is ready to use."
-
+# Cleanup commands
+clean:
+	@echo "🧼 Cleaning up Docker images and containers..."
+	docker-compose -f $(DOCKER_COMPOSE_FILE) down --volumes --remove-orphans
+	@echo "✅ All containers and volumes removed."

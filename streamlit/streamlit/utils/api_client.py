@@ -80,9 +80,16 @@ class FitnessAPI:
             )
             if response.status_code == 404:
                 return {}
+            if response.status_code == 500:
+                # Handle server errors for non-existent profiles gracefully
+                return {}
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
+            # Only show error for non-404/500 status codes
+            if hasattr(e, 'response') and e.response is not None:
+                if e.response.status_code in [404, 500]:
+                    return {}
             st.error(f"Error getting profile: {str(e)}")
             return {}
 
