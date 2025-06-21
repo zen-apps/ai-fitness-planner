@@ -750,16 +750,44 @@ class VectorIndexStatusResponse(BaseModel):
 
 
 def check_file_info(path: str) -> Dict[str, Any]:
-    """Get file system information about an index"""
+    """Get file system information about an index - FIXED VERSION"""
     if not os.path.exists(path):
         return {"exists": False}
 
     try:
-        stat = os.stat(path)
+        total_size = 0
+        file_details = {}
+        latest_modified = 0
+
+        if os.path.isdir(path):
+            # For FAISS indices, we need to check the directory contents
+            for file in os.listdir(path):
+                file_path = os.path.join(path, file)
+                if os.path.isfile(file_path):
+                    stat = os.stat(file_path)
+                    total_size += stat.st_size
+                    file_details[file] = {
+                        "size_bytes": stat.st_size,
+                        "size_mb": stat.st_size / (1024 * 1024),
+                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    }
+                    latest_modified = max(latest_modified, stat.st_mtime)
+        else:
+            # Single file
+            stat = os.stat(path)
+            total_size = stat.st_size
+            latest_modified = stat.st_mtime
+
         return {
             "exists": True,
-            "file_size_mb": stat.st_size / (1024 * 1024),
-            "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            "file_size_mb": total_size / (1024 * 1024),
+            "last_modified": (
+                datetime.fromtimestamp(latest_modified).isoformat()
+                if latest_modified > 0
+                else None
+            ),
+            "file_details": file_details if file_details else None,
+            "total_files": len(file_details) if file_details else 1,
         }
     except Exception as e:
         return {"exists": True, "error": f"Failed to get file info: {e}"}
