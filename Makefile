@@ -21,14 +21,14 @@ setup-demo: up
 	@echo "🚀 Setting up DEMO mode - Quick start with sample data (2 minutes)"
 	@echo "Perfect for: Blog demos, LangGraph testing, immediate results"
 	@sleep 10  # Give services time to start
-	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=demo
+	docker-compose exec fast_api_ai_fitness_planner python -m pip install --quiet --root-user-action=ignore -r /app/requirements.txt && python /app/scripts/setup_database.py --mode=demo
 	@echo "✅ Demo setup complete! Your AI Fitness Planner is ready for testing."
 
 setup-full: up  
 	@echo "🔥 Setting up FULL mode - Complete USDA dataset (15 minutes)"
 	@echo "Perfect for: Production use, complete nutrition database, blog showcase"
 	@sleep 10  # Give services time to start
-	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=full
+	docker-compose exec fast_api_ai_fitness_planner python -m pip install --quiet --root-user-action=ignore -r /app/requirements.txt && python /app/scripts/setup_database.py --mode=full
 	@echo "✅ Full setup complete! Production-ready with 300K+ foods."
 
 

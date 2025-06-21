@@ -1,4 +1,4 @@
-FROM python:3.9.18-slim
+FROM python:3.11-slim-buster
 
 RUN apt-get update \
     && apt-get install gcc -y \
