@@ -59,6 +59,7 @@ services:
 
   # FastAPI Backend
   fast_api_ai_fitness_planner:
+    container_name: fast_api_ai_fitness_planner
     restart: always
     build: 
       context: ./fast_api
@@ -74,7 +75,7 @@ services:
     ports:
       - "1015:8000"
     command: ["--host", "0.0.0.0", "fast_api.app.main:app", "--reload"]
-    networks:  # ADD THIS SECTION
+    networks:
       - ai-fitness-network
       - sp-net
     depends_on:
@@ -83,6 +84,7 @@ services:
 
   # Streamlit Frontend
   streamlit_app_ai_fitness_planner:
+    container_name: streamlit_app_ai_fitness_planner
     build: 
       context: ./streamlit
       dockerfile: Dockerfile

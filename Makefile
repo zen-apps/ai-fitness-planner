@@ -1,7 +1,7 @@
 VERSION := 0.0.1
-BE_IMAGE_NAME := ai-fitness-planner-backend
+BE_CONTAINER_NAME := fast_api_ai_fitness_planner
 DOCKER_COMPOSE_FILE  := docker-compose.yml 
-FE_IMAGE_NAME := ai-fitness-planner-frontend
+FE_CONTAINER_NAME := streamlit_app_ai_fitness_planner
 
 # Main commands
 up: 
@@ -11,22 +11,24 @@ logs:
 	docker-compose -f $(DOCKER_COMPOSE_FILE) logs -f --tail 15 
 
 logs-be:
-	docker logs $(BE_IMAGE_NAME) -f --tail 150 
+	docker logs $(BE_CONTAINER_NAME) -f --tail 150 
 
 logs-fe:
-	docker logs $(FE_IMAGE_NAME) -f --tail 150
+	docker logs $(FE_CONTAINER_NAME) -f --tail 150
 
 # Tiered nutrition database setup
 setup-demo: up
 	@echo "🚀 Setting up DEMO mode - Quick start with sample data (2 minutes)"
 	@echo "Perfect for: Blog demos, LangGraph testing, immediate results"
-	docker-compose exec fast_api python /app/../scripts/setup_database.py --mode=demo
+	@sleep 10  # Give services time to start
+	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=demo
 	@echo "✅ Demo setup complete! Your AI Fitness Planner is ready for testing."
 
 setup-full: up  
 	@echo "🔥 Setting up FULL mode - Complete USDA dataset (15 minutes)"
 	@echo "Perfect for: Production use, complete nutrition database, blog showcase"
-	docker-compose exec fast_api python /app/../scripts/setup_database.py --mode=full
+	@sleep 10  # Give services time to start
+	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=full
 	@echo "✅ Full setup complete! Production-ready with 300K+ foods."
 
 
@@ -35,6 +37,14 @@ clean-db:
 	@echo "🧹 Cleaning nutrition database..."
 	docker-compose exec mongodb_ai_fitness_planner mongosh --eval "use usda_nutrition; db.branded_foods.drop();"
 	@echo "✅ Database cleaned. Run make setup-demo or make setup-full to repopulate."
+
+db-stats:
+	@echo "📊 Getting database statistics..."
+	curl -s http://localhost:1015/nutrition_setup/database_stats/ | python -m json.tool
+
+test-search:
+	@echo "🔍 Testing nutrition search functionality..."
+	curl -s "http://localhost:1015/nutrition_setup/search_nutrition/?query=chicken&limit=5" | python -m json.tool
 
 # Help
 help:
@@ -60,4 +70,8 @@ help:
 	@echo "  2. make setup-full  (complete showcase)"
 
 .PHONY: up logs logs-be logs-fe setup-demo setup-full db-stats test-search clean-db help
+
+# Quick setup command for new users
+install: setup-demo
+	@echo "🎉 Installation complete! Your AI Fitness Planner is ready to use."
 

@@ -4,39 +4,85 @@ A production-ready GenAI system for personalized fitness and nutrition planning 
 
 ## 🚀 Quick Start
 
-**Choose your setup mode:**
+**100% Reproducible Setup:**
 
-### Option 1: Demo Mode (2 minutes) - Perfect for Blog Features
+### Prerequisites
+- Docker and Docker Compose installed
+- Git for cloning the repository
+
+### Demo Setup (2 minutes)
 ```bash
+# 1. Clone the repository
+git clone https://github.com/zen-apps/ai-fitness-planner.git
+cd ai-fitness-planner
+
+# 2. Copy environment template
+cp .env.example .env
+
+# 3. Download USDA nutrition data (75MB)
+curl -L -o usda_sampled_5000_foods.json https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.0/usda_sampled_5000_foods.json
+
+# 4. Move data to correct location
+mkdir -p fast_api/app/api/nutrition_data/samples/
+mv usda_sampled_5000_foods.json fast_api/app/api/nutrition_data/samples/
+
+# 5. Start the application
 make setup-demo
 ```
-- ✅ Instant gratification with curated sample data  
-- ✅ Covers all major food categories (proteins, carbs, fats, vegetables, fruits)
-- ✅ Perfect for LangGraph workflow testing
-- ✅ Blog-ready demonstrations
 
-### Option 2: Full Mode (15 minutes) - Production Ready  
-```bash  
-make setup-full
+### What You Get
+- ✅ 5,000 curated foods covering all major categories
+- ✅ AI-powered meal planning with LangGraph workflows  
+- ✅ Semantic nutrition search with FAISS
+- ✅ Complete Streamlit frontend
+- ✅ FastAPI backend with MongoDB
+- ✅ Perfect for demonstrations and testing
+
+### Access Your App
+- **Frontend**: http://localhost:8526
+- **API Docs**: http://localhost:1015/docs
+- **MongoDB UI**: http://localhost:8084 (admin/admin)
+
+## 🛠️ Development & Testing
+
+### Environment Setup
+```bash
+# Edit .env file with your API keys (required for AI features)
+# At minimum, add your OpenAI API key:
+OPENAI_API_KEY=sk-your_openai_api_key_here
 ```
-- 🔥 Complete USDA nutrition database (300K+ foods)
-- 🔥 Real-world data processing pipeline
-- 🔥 Production-ready configuration
-- 🔥 Perfect for LangChain showcase
+
+### Available Commands
+```bash
+make help              # Show all available commands
+make up               # Start services without database setup
+make logs             # View all service logs
+make logs-be          # Backend logs only
+make logs-fe          # Frontend logs only
+make clean-db         # Reset database
+```
+
+### Testing the Setup
+```bash
+# Check if services are running
+docker-compose ps
+
+# Test API health
+curl http://localhost:1015/docs
+
+# Check database stats
+curl http://localhost:1015/database_stats
+```
 
 ## 🏗️ Architecture
 
-### **Tiered Reproducibility Design**
-1. **Demo Mode**: 2-minute setup with curated foods for instant results
-2. **Full Mode**: 15-minute complete USDA data pipeline  
-3. **Enterprise Ready**: Scalable to hosted API (future enhancement)
-
 ### **Core Components**  
 - **LangGraph Workflows**: Orchestrated AI agents for meal planning
-- **Real USDA Data**: 300K+ foods with enhanced nutrition calculations
+- **USDA Nutrition Data**: 5,000 curated foods with enhanced nutrition calculations
 - **Semantic Search**: FAISS-powered nutrition matching
 - **MongoDB**: Optimized nutrition database with smart indexing
 - **FastAPI**: Production-ready API layer
+- **Streamlit**: Interactive frontend for meal planning
 
 ## 📊 Key Features
 
