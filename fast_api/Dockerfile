@@ -4,12 +4,12 @@ RUN apt-get update \
     && apt-get install gcc -y \
     && apt-get clean
 
-COPY ./requirements.txt .
+WORKDIR /app
+COPY ./requirements.txt ./requirements.txt
+COPY app ./app/
+
 RUN pip install --upgrade pip
 RUN pip install -r ./requirements.txt && rm -rf pip3 cache dir
-
-WORKDIR /app
-COPY app ./app/
 
 EXPOSE 8000
 
