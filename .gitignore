@@ -80,3 +80,5 @@ logs/
 *.pdf
 *.jpeg
 *.zip
+*.faiss
+*.pkl

@@ -11,8 +11,4 @@ RUN pip install -r requirements.txt
 
 ENV PYTHONUNBUFFERED "1"
 
-# Copy and set environment variables
-COPY config/dev.env ./
-RUN export $(cat dev.env | xargs)
-
 COPY . /usr/src/app

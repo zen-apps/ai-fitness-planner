@@ -2,6 +2,28 @@ import streamlit as st
 from datetime import datetime
 from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_sidebar
 
+# Unit conversion functions
+def kg_to_lbs(kg):
+    """Convert kilograms to pounds"""
+    return kg * 2.20462
+
+def lbs_to_kg(lbs):
+    """Convert pounds to kilograms"""
+    return lbs / 2.20462
+
+def cm_to_ft_in(cm):
+    """Convert centimeters to feet and inches"""
+    total_inches = cm / 2.54
+    feet = int(total_inches // 12)
+    inches = total_inches % 12
+    return feet, inches
+
+def ft_in_to_cm(feet, inches):
+    """Convert feet and inches to centimeters"""
+    total_inches = feet * 12 + inches
+    return total_inches * 2.54
+
+
 # Configure page
 st.set_page_config(
     page_title="Profile Setup - AI Fitness Planner",
@@ -51,6 +73,16 @@ else:
 
 with st.form("profile_form"):
     st.subheader("Basic Information")
+    
+    # Unit system selection
+    unit_system = st.selectbox(
+        "Unit System",
+        ["Imperial (lbs/ft)", "Metric (kg/cm)"],
+        index=0,  # Default to Imperial (non-metric)
+        help="Choose your preferred unit system for input. Data will be converted to metric for calculations."
+    )
+    
+    is_metric = unit_system.startswith("Metric")
 
     col1, col2 = st.columns(2)
 
@@ -59,13 +91,26 @@ with st.form("profile_form"):
             "Age", min_value=16, max_value=80, value=existing_profile.get("age", 25)
         )
 
-        weight = st.number_input(
-            "Weight (kg)",
-            min_value=40.0,
-            max_value=200.0,
-            value=existing_profile.get("weight", 70.0),
-            step=0.5,
-        )
+        if is_metric:
+            weight_input = st.number_input(
+                "Weight (kg)",
+                min_value=40.0,
+                max_value=200.0,
+                value=existing_profile.get("weight", 70.0),
+                step=0.5,
+            )
+            weight_kg = weight_input
+        else:
+            # Convert existing weight from kg to lbs for display
+            existing_weight_lbs = kg_to_lbs(existing_profile.get("weight", 70.0))
+            weight_input = st.number_input(
+                "Weight (lbs)",
+                min_value=88.0,  # ~40kg
+                max_value=440.0,  # ~200kg
+                value=existing_weight_lbs,
+                step=1.0,
+            )
+            weight_kg = lbs_to_kg(weight_input)
 
         activity_level = st.selectbox(
             "Activity Level",
@@ -76,13 +121,38 @@ with st.form("profile_form"):
         )
 
     with col2:
-        height = st.number_input(
-            "Height (cm)",
-            min_value=140.0,
-            max_value=220.0,
-            value=existing_profile.get("height", 175.0),
-            step=0.5,
-        )
+        if is_metric:
+            height_input = st.number_input(
+                "Height (cm)",
+                min_value=140.0,
+                max_value=220.0,
+                value=existing_profile.get("height", 175.0),
+                step=0.5,
+            )
+            height_cm = height_input
+        else:
+            # Convert existing height from cm to feet and inches for display
+            existing_height_cm = existing_profile.get("height", 175.0)
+            existing_feet, existing_inches = cm_to_ft_in(existing_height_cm)
+            
+            col_ft, col_in = st.columns(2)
+            with col_ft:
+                height_feet = st.number_input(
+                    "Height (feet)",
+                    min_value=4,
+                    max_value=7,
+                    value=int(existing_feet),
+                    step=1,
+                )
+            with col_in:
+                height_inches = st.number_input(
+                    "Height (inches)",
+                    min_value=0.0,
+                    max_value=11.9,
+                    value=existing_inches,
+                    step=0.1,
+                )
+            height_cm = ft_in_to_cm(height_feet, height_inches)
 
         fitness_goal = st.selectbox(
             "Primary Goal",
@@ -128,14 +198,18 @@ with st.form("profile_form"):
         ),
     )
 
+    # Show conversion info for imperial users
+    if not is_metric:
+        st.info(f"📊 Values that will be sent to API: Weight: {weight_kg:.1f} kg, Height: {height_cm:.1f} cm")
+    
     submitted = st.form_submit_button("💾 Save Profile", use_container_width=True)
 
     if submitted:
         profile_data = {
             "user_id": st.session_state.user_id,
             "age": age,
-            "weight": weight,
-            "height": height,
+            "weight": weight_kg,  # Always send metric to API
+            "height": height_cm,  # Always send metric to API
             "activity_level": activity_level,
             "fitness_goal": fitness_goal,
             "workout_frequency": workout_frequency,

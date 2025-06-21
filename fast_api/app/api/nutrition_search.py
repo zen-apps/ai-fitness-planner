@@ -1,19 +1,16 @@
 import os
 import json
 import logging
-import pickle
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Response, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from langchain.vectorstores import FAISS
 from langchain.schema import Document
-import pandas as pd
 import numpy as np
 import faiss
 from pymongo import MongoClient
-import pymongo
 from datetime import datetime
 
 # Set up logging
@@ -39,7 +36,11 @@ class NutritionQuery(BaseModel):
     )
     limit: int = Field(default=10, description="Number of results to return")
     similarity_threshold: float = Field(
-        default=0.7, description="Minimum similarity score (0-1)"
+        default=0.5, description="Minimum similarity score (0-1)"
+    )
+    use_full_database: bool = Field(
+        default=False,
+        description="Use full database (branded_foods) vs sample (branded_foods_sample)",
     )
 
 
@@ -50,8 +51,9 @@ class VectorSearchResponse(BaseModel):
     search_time_ms: int
 
 
-# Global variables for vector store and embeddings
-vector_store = None
+# Global variables for vector stores and embeddings
+vector_store_full = None  # FAISS index for branded_foods
+vector_store_sample = None  # FAISS index for branded_foods_sample
 embeddings_model = None
 mongo_client = None
 
@@ -86,6 +88,47 @@ def get_embeddings_model():
             openai_api_key=os.getenv("OPENAI_API_KEY"),
         )
     return embeddings_model
+
+
+def get_vector_store(use_full_database: bool = False):
+    """Get the appropriate FAISS vector store based on database selection"""
+    global vector_store_full, vector_store_sample
+
+    if use_full_database:
+        if vector_store_full is None:
+            # Try to load full database vector store
+            vector_store_path = "./nutrition_faiss_index_full"
+            if os.path.exists(vector_store_path):
+                embeddings = get_embeddings_model()
+                vector_store_full = FAISS.load_local(
+                    vector_store_path, embeddings, allow_dangerous_deserialization=True
+                )
+            else:
+                logger.warning(
+                    "Full database vector index not found. Falling back to sample."
+                )
+                return get_vector_store(use_full_database=False)
+        return vector_store_full
+    else:
+        if vector_store_sample is None:
+            # Try to load sample database vector store
+            vector_store_path = "./nutrition_faiss_index_sample"
+            if os.path.exists(vector_store_path):
+                embeddings = get_embeddings_model()
+                vector_store_sample = FAISS.load_local(
+                    vector_store_path, embeddings, allow_dangerous_deserialization=True
+                )
+            else:
+                # Fallback to old path for backward compatibility
+                vector_store_path = "./nutrition_faiss_index"
+                if os.path.exists(vector_store_path):
+                    embeddings = get_embeddings_model()
+                    vector_store_sample = FAISS.load_local(
+                        vector_store_path,
+                        embeddings,
+                        allow_dangerous_deserialization=True,
+                    )
+        return vector_store_sample
 
 
 def create_food_text_representation(food_item: Dict) -> str:
@@ -140,185 +183,22 @@ def create_food_text_representation(food_item: Dict) -> str:
     return " | ".join(parts)
 
 
-@nutrition_search.post("/create_vector_index/")
-async def create_vector_index(
-    batch_size: int = 1000, max_documents: Optional[int] = None, recreate: bool = False
-):
-    """Create FAISS vector index from MongoDB nutrition data"""
-    global vector_store
-
-    start_time = datetime.now()
-
-    try:
-        # Check if vector store already exists and we don't want to recreate
-        vector_store_path = "./nutrition_faiss_index"
-        if os.path.exists(vector_store_path) and not recreate:
-            logger.info("Loading existing FAISS index...")
-            embeddings = get_embeddings_model()
-            vector_store = FAISS.load_local(
-                vector_store_path, embeddings, allow_dangerous_deserialization=True
-            )
-            return {
-                "status": "success",
-                "message": "Loaded existing FAISS index",
-                "index_size": vector_store.index.ntotal if vector_store else 0,
-            }
-
-        # Get MongoDB connection
-        client = get_mongo_client()
-        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        branded_foods = db["branded_foods"]
-
-        # Get embeddings model
-        embeddings = get_embeddings_model()
-
-        # Count total documents
-        total_docs = branded_foods.count_documents({})
-        if max_documents:
-            total_docs = min(total_docs, max_documents)
-
-        logger.info(f"Processing {total_docs} documents for vector indexing...")
-
-        documents = []
-        metadatas = []
-        processed_count = 0
-
-        # Process documents in batches
-        cursor = (
-            branded_foods.find({}).limit(max_documents)
-            if max_documents
-            else branded_foods.find({})
-        )
-
-        batch = []
-        for food_item in cursor:
-            try:
-                # Create text representation
-                text_content = create_food_text_representation(food_item)
-
-                # Create document
-                doc = Document(
-                    page_content=text_content,
-                    metadata={
-                        "fdc_id": food_item.get("fdcId"),
-                        "description": food_item.get("description", ""),
-                        "brand_owner": food_item.get("brandOwner", ""),
-                        "brand_name": food_item.get("brandName", ""),
-                        "food_category": food_item.get("foodCategory", ""),
-                        "gtin_upc": food_item.get("gtinUpc", ""),
-                        "serving_size": food_item.get("servingSize", 0),
-                        # Add key nutrition info to metadata for filtering
-                        "calories_per_100g": food_item.get("nutrition_enhanced", {})
-                        .get("per_100g", {})
-                        .get("energy_kcal", 0),
-                        "protein_per_100g": food_item.get("nutrition_enhanced", {})
-                        .get("per_100g", {})
-                        .get("protein_g", 0),
-                        "fat_per_100g": food_item.get("nutrition_enhanced", {})
-                        .get("per_100g", {})
-                        .get("total_fat_g", 0),
-                        "carbs_per_100g": food_item.get("nutrition_enhanced", {})
-                        .get("per_100g", {})
-                        .get("carbs_g", 0),
-                        "primary_macro": food_item.get("nutrition_enhanced", {})
-                        .get("macro_breakdown", {})
-                        .get("primary_macro_category", "unknown"),
-                        "is_high_protein": food_item.get("nutrition_enhanced", {})
-                        .get("macro_breakdown", {})
-                        .get("is_high_protein", False),
-                        "nutrition_density_score": food_item.get(
-                            "nutrition_enhanced", {}
-                        ).get("nutrition_density_score", 0),
-                    },
-                )
-
-                batch.append(doc)
-                processed_count += 1
-
-                # Process batch when it reaches batch_size
-                if len(batch) >= batch_size:
-                    if not documents:  # First batch - create vector store
-                        logger.info(
-                            f"Creating initial FAISS index with {len(batch)} documents..."
-                        )
-                        vector_store = FAISS.from_documents(batch, embeddings)
-                    else:  # Subsequent batches - add to existing vector store
-                        logger.info(
-                            f"Adding {len(batch)} documents to existing index..."
-                        )
-                        additional_store = FAISS.from_documents(batch, embeddings)
-                        vector_store.merge_from(additional_store)
-
-                    batch = []
-                    logger.info(
-                        f"Processed {processed_count}/{total_docs} documents..."
-                    )
-
-            except Exception as e:
-                logger.warning(
-                    f"Error processing document {food_item.get('fdcId', 'unknown')}: {str(e)}"
-                )
-                continue
-
-        # Process remaining documents
-        if batch:
-            if not vector_store:
-                logger.info(
-                    f"Creating FAISS index with remaining {len(batch)} documents..."
-                )
-                vector_store = FAISS.from_documents(batch, embeddings)
-            else:
-                logger.info(f"Adding final {len(batch)} documents to index...")
-                additional_store = FAISS.from_documents(batch, embeddings)
-                vector_store.merge_from(additional_store)
-
-        # Save the vector store
-        os.makedirs(vector_store_path, exist_ok=True)
-        vector_store.save_local(vector_store_path)
-
-        processing_time = (datetime.now() - start_time).total_seconds()
-
-        logger.info("Vector index creation completed!")
-
-        return {
-            "status": "success",
-            "message": "FAISS vector index created successfully",
-            "total_documents_processed": processed_count,
-            "index_size": vector_store.index.ntotal,
-            "processing_time_seconds": round(processing_time, 2),
-            "vector_store_path": vector_store_path,
-            "batch_size_used": batch_size,
-        }
-
-    except Exception as e:
-        logger.error(f"Error creating vector index: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to create vector index: {str(e)}"
-        )
-
-
 @nutrition_search.post(
     "/search_nutrition_semantic/", response_model=VectorSearchResponse
 )
 async def search_nutrition_semantic(query_data: NutritionQuery):
-    """Semantic search using FAISS vector store"""
-    global vector_store
-
+    """Semantic search using FAISS vector store with collection-specific indices"""
     start_time = datetime.now()
 
     try:
-        # Load vector store if not already loaded
-        if vector_store is None:
-            vector_store_path = "./nutrition_faiss_index"
-            if not os.path.exists(vector_store_path):
-                raise HTTPException(
-                    status_code=404,
-                    detail="Vector index not found. Please create it first using /create_vector_index/",
-                )
+        # Get the appropriate vector store based on database selection
+        vector_store = get_vector_store(use_full_database=query_data.use_full_database)
 
-            embeddings = get_embeddings_model()
-            vector_store = FAISS.load_local(
-                vector_store_path, embeddings, allow_dangerous_deserialization=True
+        if vector_store is None:
+            db_type = "full" if query_data.use_full_database else "sample"
+            raise HTTPException(
+                status_code=404,
+                detail=f"Vector index for {db_type} database not found. Please create it first.",
             )
 
         # Perform semantic search
@@ -461,6 +341,7 @@ async def search_nutrition_hybrid(
     calories_max: float = 999,
     limit: int = 10,
     semantic_weight: float = 0.7,
+    use_full_database: bool = False,
 ):
     """Hybrid search combining traditional MongoDB queries with semantic search"""
 
@@ -483,6 +364,7 @@ async def search_nutrition_hybrid(
             },
             limit=limit * 2,  # Get more results for hybrid scoring
             similarity_threshold=0.5,  # Lower threshold for hybrid approach
+            use_full_database=use_full_database,
         )
 
         # Get semantic search results
@@ -491,7 +373,10 @@ async def search_nutrition_hybrid(
         # Get traditional MongoDB search results
         client = get_mongo_client()
         db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        branded_foods = db["branded_foods"]
+        collection_name = (
+            "branded_foods" if use_full_database else "branded_foods_sample"
+        )
+        branded_foods = db[collection_name]
 
         # Traditional search query
         mongo_query = {
@@ -611,94 +496,387 @@ async def search_nutrition_hybrid(
         raise HTTPException(status_code=500, detail=f"Hybrid search failed: {str(e)}")
 
 
-@nutrition_search.get("/vector_index_stats/")
-async def get_vector_index_stats():
-    """Get statistics about the FAISS vector index"""
-    global vector_store
+@nutrition_search.post("/create_vector_index_full/")
+async def create_vector_index_full(
+    batch_size: int = 1000, max_documents: Optional[int] = None, recreate: bool = False
+):
+    """Create FAISS vector index from full MongoDB nutrition data (branded_foods)"""
+    global vector_store_full
+    return await _create_vector_index(
+        collection_name="branded_foods",
+        index_path="./nutrition_faiss_index_full",
+        batch_size=batch_size,
+        max_documents=max_documents,
+        recreate=recreate,
+    )
+
+
+@nutrition_search.post("/create_vector_index_sample/")
+async def create_vector_index_sample(
+    batch_size: int = 1000, max_documents: Optional[int] = None, recreate: bool = False
+):
+    """Create FAISS vector index from sample MongoDB nutrition data (branded_foods_sample)"""
+    global vector_store_sample
+    return await _create_vector_index(
+        collection_name="branded_foods_sample",
+        index_path="./nutrition_faiss_index_sample",
+        batch_size=batch_size,
+        max_documents=max_documents,
+        recreate=recreate,
+    )
+
+
+async def _create_vector_index(
+    collection_name: str,
+    index_path: str,
+    batch_size: int = 1000,
+    max_documents: Optional[int] = None,
+    recreate: bool = False,
+):
+    """Helper function to create FAISS vector index from MongoDB data"""
+    start_time = datetime.now()
 
     try:
-        vector_store_path = "./nutrition_faiss_index"
-
-        if not os.path.exists(vector_store_path):
-            return {
-                "status": "not_found",
-                "message": "Vector index not found. Create it first using /create_vector_index/",
-            }
-
-        # Load vector store if not already loaded
-        if vector_store is None:
+        # Check if vector store already exists and we don't want to recreate
+        if os.path.exists(index_path) and not recreate:
+            logger.info(f"Loading existing FAISS index from {index_path}...")
             embeddings = get_embeddings_model()
             vector_store = FAISS.load_local(
-                vector_store_path, embeddings, allow_dangerous_deserialization=True
+                index_path, embeddings, allow_dangerous_deserialization=True
+            )
+            return {
+                "status": "success",
+                "message": f"Loaded existing FAISS index for {collection_name}",
+                "collection_name": collection_name,
+                "index_size": vector_store.index.ntotal if vector_store else 0,
+                "index_path": index_path,
+            }
+
+        # Get MongoDB connection
+        client = get_mongo_client()
+        db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
+        collection = db[collection_name]
+
+        # Check if collection exists and has data
+        total_docs = collection.count_documents({})
+        if total_docs == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection '{collection_name}' not found or empty. Please import data first.",
             )
 
-        # Get index stats
-        index_size = vector_store.index.ntotal
-        dimension = vector_store.index.d
+        # Get embeddings model
+        embeddings = get_embeddings_model()
 
-        # Get file sizes
-        index_files = []
-        total_size_mb = 0
-        for file in os.listdir(vector_store_path):
-            file_path = os.path.join(vector_store_path, file)
-            size_mb = os.path.getsize(file_path) / (1024 * 1024)
-            index_files.append({"filename": file, "size_mb": round(size_mb, 2)})
-            total_size_mb += size_mb
+        if max_documents:
+            total_docs = min(total_docs, max_documents)
+
+        logger.info(
+            f"Processing {total_docs} documents from {collection_name} for vector indexing..."
+        )
+
+        documents = []
+        processed_count = 0
+
+        # Process documents in batches
+        cursor = (
+            collection.find({}).limit(max_documents)
+            if max_documents
+            else collection.find({})
+        )
+
+        batch = []
+        for food_item in cursor:
+            try:
+                # Create text representation
+                text_content = create_food_text_representation(food_item)
+
+                # Create document
+                doc = Document(
+                    page_content=text_content,
+                    metadata={
+                        "fdc_id": food_item.get("fdcId"),
+                        "description": food_item.get("description", ""),
+                        "brand_owner": food_item.get("brandOwner", ""),
+                        "brand_name": food_item.get("brandName", ""),
+                        "food_category": food_item.get("foodCategory", ""),
+                        "gtin_upc": food_item.get("gtinUpc", ""),
+                        "serving_size": food_item.get("servingSize", 0),
+                        # Add key nutrition info to metadata for filtering
+                        "calories_per_100g": food_item.get("nutrition_enhanced", {})
+                        .get("per_100g", {})
+                        .get("energy_kcal", 0),
+                        "protein_per_100g": food_item.get("nutrition_enhanced", {})
+                        .get("per_100g", {})
+                        .get("protein_g", 0),
+                        "fat_per_100g": food_item.get("nutrition_enhanced", {})
+                        .get("per_100g", {})
+                        .get("total_fat_g", 0),
+                        "carbs_per_100g": food_item.get("nutrition_enhanced", {})
+                        .get("per_100g", {})
+                        .get("carbs_g", 0),
+                        "primary_macro": food_item.get("nutrition_enhanced", {})
+                        .get("macro_breakdown", {})
+                        .get("primary_macro_category", "unknown"),
+                        "is_high_protein": food_item.get("nutrition_enhanced", {})
+                        .get("macro_breakdown", {})
+                        .get("is_high_protein", False),
+                        "nutrition_density_score": food_item.get(
+                            "nutrition_enhanced", {}
+                        ).get("nutrition_density_score", 0),
+                    },
+                )
+
+                batch.append(doc)
+                processed_count += 1
+
+                # Process batch when it reaches batch_size
+                if len(batch) >= batch_size:
+                    if not documents:  # First batch - create vector store
+                        logger.info(
+                            f"Creating initial FAISS index with {len(batch)} documents..."
+                        )
+                        vector_store = FAISS.from_documents(batch, embeddings)
+                    else:  # Subsequent batches - add to existing vector store
+                        logger.info(
+                            f"Adding {len(batch)} documents to existing index..."
+                        )
+                        additional_store = FAISS.from_documents(batch, embeddings)
+                        vector_store.merge_from(additional_store)
+
+                    batch = []
+                    logger.info(
+                        f"Processed {processed_count}/{total_docs} documents..."
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    f"Error processing document {food_item.get('fdcId', 'unknown')}: {str(e)}"
+                )
+                continue
+
+        # Process remaining documents
+        if batch:
+            if "vector_store" not in locals():
+                logger.info(
+                    f"Creating FAISS index with remaining {len(batch)} documents..."
+                )
+                vector_store = FAISS.from_documents(batch, embeddings)
+            else:
+                logger.info(f"Adding final {len(batch)} documents to index...")
+                additional_store = FAISS.from_documents(batch, embeddings)
+                vector_store.merge_from(additional_store)
+
+        # Save the vector store
+        os.makedirs(index_path, exist_ok=True)
+        vector_store.save_local(index_path)
+
+        # Update global variables
+        if collection_name == "branded_foods":
+            global vector_store_full
+            vector_store_full = vector_store
+        else:
+            global vector_store_sample
+            vector_store_sample = vector_store
+
+        processing_time = (datetime.now() - start_time).total_seconds()
+
+        logger.info(f"Vector index creation completed for {collection_name}!")
 
         return {
-            "status": "exists",
-            "index_size": index_size,
-            "embedding_dimension": dimension,
-            "total_size_mb": round(total_size_mb, 2),
-            "index_files": index_files,
-            "vector_store_path": vector_store_path,
+            "status": "success",
+            "message": f"FAISS vector index created successfully for {collection_name}",
+            "collection_name": collection_name,
+            "total_documents_processed": processed_count,
+            "index_size": vector_store.index.ntotal,
+            "processing_time_seconds": round(processing_time, 2),
+            "index_path": index_path,
+            "batch_size_used": batch_size,
         }
 
     except Exception as e:
-        logger.error(f"Error getting vector index stats: {str(e)}")
+        logger.error(f"Error creating vector index for {collection_name}: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to get index stats: {str(e)}"
+            status_code=500, detail=f"Failed to create vector index: {str(e)}"
         )
 
 
-# Add endpoint to test vector search functionality
-@nutrition_search.get("/test_vector_search/")
-async def test_vector_search():
-    """Test vector search with common queries"""
+import threading
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+import psutil
+import gc
 
-    test_queries = [
-        {
-            "query": "high protein low carb snack",
-            "dietary_restrictions": [],
-            "macro_goals": {"protein_min": 15, "carbs_max": 5},
-        },
-        {"query": "greek yogurt", "dietary_restrictions": [], "macro_goals": {}},
-        {
-            "query": "breakfast cereal",
-            "dietary_restrictions": ["gluten-free"],
-            "macro_goals": {"calories_max": 200},
-        },
-    ]
+# Global variables with thread locks
+vector_store_full = None
+vector_store_sample = None
+embeddings_model = None
+mongo_client = None
+_vector_store_lock = threading.Lock()
 
-    results = {}
+# Index status tracking
+index_status = {
+    "full_database": {
+        "loading": False,
+        "loaded": False,
+        "error": None,
+        "last_check": None,
+    },
+    "sample_database": {
+        "loading": False,
+        "loaded": False,
+        "error": None,
+        "last_check": None,
+    },
+}
 
-    for i, test_query in enumerate(test_queries):
-        try:
-            query_data = NutritionQuery(**test_query, limit=3)
-            search_result = await search_nutrition_semantic(query_data)
-            results[f"test_{i+1}"] = {
-                "query": test_query,
-                "results_count": search_result.results_found,
-                "search_time_ms": search_result.search_time_ms,
-                "sample_results": (
-                    search_result.results[:2] if search_result.results else []
-                ),
-            }
-        except Exception as e:
-            results[f"test_{i+1}"] = {"query": test_query, "error": str(e)}
 
-    return {
-        "test_summary": "Vector search functionality test",
-        "tests_run": len(test_queries),
-        "results": results,
-    }
+class IndexStatus(BaseModel):
+    exists: bool
+    loaded: bool
+    loading: bool
+    index_size: Optional[int] = None
+    embedding_dimension: Optional[int] = None
+    file_size_mb: Optional[float] = None
+    last_modified: Optional[str] = None
+    error: Optional[str] = None
+    memory_usage_mb: Optional[float] = None
+
+
+class VectorIndexStatusResponse(BaseModel):
+    full_database: IndexStatus
+    sample_database: IndexStatus
+    legacy_index: IndexStatus
+    system_info: Dict[str, Any]
+
+
+def check_file_info(path: str) -> Dict[str, Any]:
+    """Get file system information about an index - FIXED VERSION"""
+    if not os.path.exists(path):
+        return {"exists": False}
+
+    try:
+        total_size = 0
+        file_details = {}
+        latest_modified = 0
+
+        if os.path.isdir(path):
+            # For FAISS indices, we need to check the directory contents
+            for file in os.listdir(path):
+                file_path = os.path.join(path, file)
+                if os.path.isfile(file_path):
+                    stat = os.stat(file_path)
+                    total_size += stat.st_size
+                    file_details[file] = {
+                        "size_bytes": stat.st_size,
+                        "size_mb": stat.st_size / (1024 * 1024),
+                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    }
+                    latest_modified = max(latest_modified, stat.st_mtime)
+        else:
+            # Single file
+            stat = os.stat(path)
+            total_size = stat.st_size
+            latest_modified = stat.st_mtime
+
+        return {
+            "exists": True,
+            "file_size_mb": total_size / (1024 * 1024),
+            "last_modified": (
+                datetime.fromtimestamp(latest_modified).isoformat()
+                if latest_modified > 0
+                else None
+            ),
+            "file_details": file_details if file_details else None,
+            "total_files": len(file_details) if file_details else 1,
+        }
+    except Exception as e:
+        return {"exists": True, "error": f"Failed to get file info: {e}"}
+
+
+@nutrition_search.get("/vector_index_status/", response_model=VectorIndexStatusResponse)
+async def get_vector_index_status():
+    """Get comprehensive status of all vector indices with performance optimization"""
+    try:
+        logger.info("Checking vector index status...")
+
+        # System information
+        memory = psutil.virtual_memory()
+        system_info = {
+            "memory_usage_percent": memory.percent,
+            "memory_available_gb": memory.available / (1024**3),
+            "memory_total_gb": memory.total / (1024**3),
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        # Define all index paths
+        indices = {
+            "full_database": "./nutrition_faiss_index_full",
+            "sample_database": "./nutrition_faiss_index_sample",
+            "legacy_index": "./nutrition_faiss_index",
+        }
+
+        status_response = {"system_info": system_info}
+
+        # Check each index
+        for db_type, index_path in indices.items():
+            logger.debug(f"Checking {db_type} at {index_path}")
+
+            # Get file system info
+            file_info = check_file_info(index_path)
+
+            # Base status
+            status = IndexStatus(
+                exists=file_info["exists"],
+                loaded=False,
+                loading=False,
+                file_size_mb=file_info.get("file_size_mb"),
+                last_modified=file_info.get("last_modified"),
+                error=file_info.get("error"),
+            )
+
+            if file_info["exists"] and not file_info.get("error"):
+                # Check if this is a tracked index
+                if db_type in index_status:
+                    status.loading = index_status[db_type]["loading"]
+                    status.loaded = index_status[db_type]["loaded"]
+                    status.error = index_status[db_type]["error"]
+
+                # Try to get index info WITHOUT loading the full index
+                if status.loaded:
+                    try:
+                        vector_store = None
+                        if db_type == "full_database":
+                            with _vector_store_lock:
+                                vector_store = vector_store_full
+                        elif db_type == "sample_database":
+                            with _vector_store_lock:
+                                vector_store = vector_store_sample
+
+                        if vector_store is not None:
+                            status.index_size = vector_store.index.ntotal
+                            status.embedding_dimension = vector_store.index.d
+                            # Estimate memory usage
+                            if status.index_size and status.embedding_dimension:
+                                # Rough estimate: 4 bytes per float * dimensions * vectors + overhead
+                                estimated_mb = (
+                                    status.index_size * status.embedding_dimension * 4
+                                ) / (1024**2)
+                                status.memory_usage_mb = estimated_mb
+
+                    except Exception as e:
+                        logger.warning(
+                            f"Could not get loaded index info for {db_type}: {e}"
+                        )
+                        status.error = f"Loaded but could not retrieve info: {str(e)}"
+
+            status_response[db_type] = status
+
+        logger.info("Vector index status check completed successfully")
+        return VectorIndexStatusResponse(**status_response)
+
+    except Exception as e:
+        logger.error(f"Error getting vector index status: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get index status: {str(e)}"
+        )

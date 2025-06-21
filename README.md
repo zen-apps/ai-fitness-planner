@@ -1,396 +1,118 @@
-# ai-fitness-planner
+# AI Fitness Planner
 
-download usda json branded foods data 
-@nutrition_setup.get("/load_usda_data/")
+A production-ready GenAI system for personalized fitness and nutrition planning using LangGraph workflows, real USDA nutrition data, and coordinated AI agents.
 
-load data into mongo
-@nutrition_setup.post("/import_usda_data/")
+## 🚀 Quick Start
 
-search by product 
-@nutrition_setup.get("/search_nutrition/")
-{
-  "query": "black label",
-  "results_found": 1,
-  "results": [
-    {
-      "fdc_id": 2070292,
-      "description": "HORMEL, BLACK LABEL, BROWN SUGAR THICK CUT BACON",
-      "brand_owner": "Hormel Foods Corporation ",
-      "brand_name": "HORMEL",
-      "food_class": "Branded",
-      "food_category": null,
-      "gtin_upc": "037600314060",
-      "ingredients": "CURED WITH WATER, SALT, BROWN SUGAR, SODIUM PHOSPHATE, SODIUM ERYTHORBATE, NATURAL FLAVOR (WATER, NATURAL FLAVORS), SODIUM NITRITE.",
-      "serving_size": 24,
-      "serving_size_unit": "g",
-      "household_serving_fulltext": "2 PAN-FRIED SLICES",
-      "modified_date": "7/11/2020",
-      "available_date": "7/11/2020",
-      "market_country": "United States",
-      "discontinued_date": null,
-      "preparation_state_code": null,
-      "trade_channel": null,
-      "short_description": null,
-      "nutrition_enhanced": {
-        "serving_info": {
-          "serving_size_g": 24,
-          "serving_description": "2 PAN-FRIED SLICES",
-          "multiplier_to_100g": 4.1667
-        },
-        "per_serving": {
-          "energy_kcal": 458,
-          "protein_g": 33.3,
-          "total_fat_g": 33.3,
-          "carbs_g": 4.17,
-          "fiber_g": 0,
-          "sugars_g": 4.17,
-          "sodium_mg": 1960,
-          "cholesterol_mg": 104,
-          "saturated_fat_g": 12.5,
-          "trans_fat_g": 0
-        },
-        "per_100g": {
-          "energy_kcal": 1908.33,
-          "protein_g": 138.75,
-          "total_fat_g": 138.75,
-          "carbs_g": 17.38,
-          "fiber_g": 0,
-          "sugars_g": 17.38,
-          "sodium_mg": 8166.67,
-          "cholesterol_mg": 433.33,
-          "saturated_fat_g": 52.08,
-          "trans_fat_g": 0
-        },
-        "label_nutrients_enhanced": {
-          "calories": 110,
-          "fat_g": 7.99,
-          "saturated_fat_g": 3,
-          "trans_fat_g": 0,
-          "cholesterol_mg": 25,
-          "sodium_mg": 470,
-          "carbs_g": 1,
-          "fiber_g": 0,
-          "sugars_g": 1,
-          "protein_g": 7.99
-        },
-        "nutrition_density_score": 7.27,
-        "macro_breakdown": {
-          "protein_percent": 29.6,
-          "fat_percent": 66.7,
-          "carbs_percent": 3.7,
-          "total_macro_kcal": 1873.3,
-          "calories_from_protein": 555,
-          "calories_from_fat": 1248.8,
-          "calories_from_carbs": 69.5,
-          "macro_categories": [
-            "high_fat"
-          ],
-          "primary_macro_category": "high_fat",
-          "is_high_protein": false,
-          "is_high_fat": true,
-          "is_high_carb": false,
-          "is_balanced": false
-        }
-      },
-      "food_nutrients": [
-        {
-          "type": "FoodNutrient",
-          "id": 25472934,
-          "nutrient": {
-            "id": 1003,
-            "number": "203",
-            "name": "Protein",
-            "rank": 600,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 33.3
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472935,
-          "nutrient": {
-            "id": 1004,
-            "number": "204",
-            "name": "Total lipid (fat)",
-            "rank": 800,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 33.3
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472936,
-          "nutrient": {
-            "id": 1005,
-            "number": "205",
-            "name": "Carbohydrate, by difference",
-            "rank": 1110,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 4.17
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472937,
-          "nutrient": {
-            "id": 1008,
-            "number": "208",
-            "name": "Energy",
-            "rank": 300,
-            "unitName": "kcal"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 458
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472938,
-          "nutrient": {
-            "id": 2000,
-            "number": "269",
-            "name": "Total Sugars",
-            "rank": 1510,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 4.17
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472939,
-          "nutrient": {
-            "id": 1079,
-            "number": "291",
-            "name": "Fiber, total dietary",
-            "rank": 1200,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472940,
-          "nutrient": {
-            "id": 1087,
-            "number": "301",
-            "name": "Calcium, Ca",
-            "rank": 5300,
-            "unitName": "mg"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472941,
-          "nutrient": {
-            "id": 1089,
-            "number": "303",
-            "name": "Iron, Fe",
-            "rank": 5400,
-            "unitName": "mg"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472942,
-          "nutrient": {
-            "id": 1093,
-            "number": "307",
-            "name": "Sodium, Na",
-            "rank": 5800,
-            "unitName": "mg"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 1960
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472943,
-          "nutrient": {
-            "id": 1104,
-            "number": "318",
-            "name": "Vitamin A, IU",
-            "rank": 7500,
-            "unitName": "IU"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472944,
-          "nutrient": {
-            "id": 1162,
-            "number": "401",
-            "name": "Vitamin C, total ascorbic acid",
-            "rank": 6300,
-            "unitName": "mg"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCD",
-            "description": "Calculated from a daily value percentage per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472945,
-          "nutrient": {
-            "id": 1253,
-            "number": "601",
-            "name": "Cholesterol",
-            "rank": 15700,
-            "unitName": "mg"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 104
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472946,
-          "nutrient": {
-            "id": 1257,
-            "number": "605",
-            "name": "Fatty acids, total trans",
-            "rank": 15400,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 0
-        },
-        {
-          "type": "FoodNutrient",
-          "id": 25472947,
-          "nutrient": {
-            "id": 1258,
-            "number": "606",
-            "name": "Fatty acids, total saturated",
-            "rank": 9700,
-            "unitName": "g"
-          },
-          "foodNutrientDerivation": {
-            "code": "LCCS",
-            "description": "Calculated from value per serving size measure",
-            "foodNutrientSource": {
-              "id": 9,
-              "code": "12",
-              "description": "Manufacturer's analytical; partial documentation"
-            }
-          },
-          "amount": 12.5
-        }
-      ],
-      "food_attributes": [],
-      "food_attribute_types": [],
-      "food_version_ids": []
-    }
-  ]
-}
+**Choose your setup mode:**
+
+### Option 1: Demo Mode (2 minutes) - Perfect for Blog Features
+```bash
+make setup-demo
+```
+- ✅ Instant gratification with curated sample data  
+- ✅ Covers all major food categories (proteins, carbs, fats, vegetables, fruits)
+- ✅ Perfect for LangGraph workflow testing
+- ✅ Blog-ready demonstrations
+
+### Option 2: Full Mode (15 minutes) - Production Ready  
+```bash  
+make setup-full
+```
+- 🔥 Complete USDA nutrition database (300K+ foods)
+- 🔥 Real-world data processing pipeline
+- 🔥 Production-ready configuration
+- 🔥 Perfect for LangChain showcase
+
+## 🏗️ Architecture
+
+### **Tiered Reproducibility Design**
+1. **Demo Mode**: 2-minute setup with curated foods for instant results
+2. **Full Mode**: 15-minute complete USDA data pipeline  
+3. **Enterprise Ready**: Scalable to hosted API (future enhancement)
+
+### **Core Components**  
+- **LangGraph Workflows**: Orchestrated AI agents for meal planning
+- **Real USDA Data**: 300K+ foods with enhanced nutrition calculations
+- **Semantic Search**: FAISS-powered nutrition matching
+- **MongoDB**: Optimized nutrition database with smart indexing
+- **FastAPI**: Production-ready API layer
+
+## 📊 Key Features
+
+### **Data Engineering Pipeline**
+- Automated USDA Branded Foods download & processing
+- Enhanced nutrition calculations (per-100g normalization)  
+- Macro breakdown analysis (high-protein/fat/carb classification)
+- Optimized MongoDB indexing for sub-second search
+
+### **AI Agent Workflows**
+- Parallel agent execution with LangGraph
+- Coordinated meal timing with workout planning
+- Personalized nutrition recommendations (bulk/cut/maintenance)
+- Real-time nutrition search and matching
+
+### **Production Patterns**
+- Docker containerization
+- Environment-based configuration
+- LangSmith observability integration
+- Comprehensive error handling & logging
+
+## 🛠️ Development
+
+### Database Management
+```bash
+make db-stats          # Show database statistics
+make test-search       # Test nutrition search functionality  
+make clean-db          # Reset database
+```
+
+### Service Management
+```bash
+make up               # Start all services
+make logs             # View all service logs
+make logs-be          # Backend logs only
+make logs-fe          # Frontend logs only
+```
+
+### Help
+```bash
+make help             # Show all available commands
+```
+
+## 🎯 Perfect for LangChain Blog Features
+
+### **Immediate Impact Story**
+1. **2-minute setup** → Working AI fitness planner
+2. **Real data processing** → 300K foods in 15 minutes  
+3. **LangGraph workflows** → Coordinated AI agents
+4. **Production patterns** → Scalable GenAI architecture
+
+### **Technical Innovation Highlights**
+- **Hybrid Search**: Semantic + traditional nutrition matching
+- **Agent Coordination**: Parallel meal and workout planning
+- **Data Engineering**: Complete USDA pipeline automation
+- **Vector Similarity**: FAISS-powered food recommendations
+
+### **Metrics to Showcase**
+- 300K+ foods processed with enhanced nutrition calculations
+- Sub-second semantic search across complete nutrition database  
+- Parallel agent workflows reducing plan generation time
+- Real-world scenarios: bulk/cut/maintenance nutrition planning
+
+## 📈 Blog Narrative Arc
+
+1. **Hook**: "Building a production GenAI system in 15 minutes"
+2. **Problem**: Complex nutrition planning requires orchestrated AI agents  
+3. **Solution**: LangGraph + real USDA data + coordinated workflows
+4. **Demo**: `make setup-demo` → immediate results
+5. **Scale**: `make setup-full` → production showcase
+6. **Results**: Complete personalized fitness planning system
+
+---
+
+## Legacy API Endpoints (Still Available)
+
+- **Download USDA data**: `@nutrition_setup.get("/load_usda_data/")`
+- **Import to MongoDB**: `@nutrition_setup.post("/import_usda_data/")`  
+- **Search products**: `@nutrition_setup.get("/search_nutrition/")`

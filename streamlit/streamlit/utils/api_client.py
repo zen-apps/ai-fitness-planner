@@ -87,9 +87,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_complete_plan(
-        user_id: str, meal_days: int = 7, workout_days: int = 3
-    ) -> Dict[str, Any]:
+    def generate_complete_plan(user_id: str, workout_days: int = 3) -> Dict[str, Any]:
         """Generate complete fitness plan"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -97,7 +95,6 @@ class FitnessAPI:
                 "user_id": user_id,
                 "meal_request": {
                     "user_id": user_id,
-                    "days": meal_days,
                     "meal_count": 3,
                 },
                 "workout_request": {"user_id": user_id, "days_per_week": workout_days},
@@ -113,9 +110,7 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_langgraph_plan(
-        user_id: str, meal_days: int = 7, workout_days: int = 3
-    ) -> Dict[str, Any]:
+    def generate_langgraph_plan(user_id: str, use_o3_mini: bool = True, use_full_database: bool = False, meal_plan_days: int = 1) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -123,15 +118,16 @@ class FitnessAPI:
                 "user_id": user_id,
                 "generate_meal_plan": True,
                 "generate_workout_plan": True,
-                "days": meal_days,
-                "meal_preferences": {"days": meal_days, "meal_count": 3},
-                "workout_preferences": {"days_per_week": workout_days},
+                "meal_preferences": {"meal_count": 3, "days": meal_plan_days},
+                "workout_preferences": {},  # Will use profile settings
+                "use_o3_mini": use_o3_mini,
+                "use_full_database": use_full_database,
             }
 
             response = requests.post(
                 f"{api_url}/v1/langgraph/generate-fitness-plan/",
                 json=request_data,
-                timeout=90,
+                timeout=360,
             )
             response.raise_for_status()
             return response.json()
@@ -154,6 +150,21 @@ class FitnessAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             st.error(f"Error searching nutrition: {str(e)}")
+            return {}
+
+    @staticmethod
+    def check_database_availability() -> Dict[str, Any]:
+        """Check which databases are available (full vs sample)"""
+        api_url = FitnessAPI.get_api_url()
+        try:
+            response = requests.get(
+                f"{api_url}/v1/nutrition_setup/database_availability/",
+                timeout=10,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error checking database availability: {str(e)}")
             return {}
 
 
@@ -183,4 +194,3 @@ def setup_api_settings_sidebar():
 
         # Show current API URL
         current_url = FitnessAPI.get_api_url()
-        st.write(f"🔗 **Current URL:** {current_url}")
