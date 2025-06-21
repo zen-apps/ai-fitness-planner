@@ -116,3 +116,63 @@ make help             # Show all available commands
 - **Download USDA data**: `@nutrition_setup.get("/load_usda_data/")`
 - **Import to MongoDB**: `@nutrition_setup.post("/import_usda_data/")`  
 - **Search products**: `@nutrition_setup.get("/search_nutrition/")`
+
+
+ # Environment Setup
+
+## Quick Start
+
+1. **Copy the environment template:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Update the `.env` file with your actual values:**
+   - Replace placeholder values with your real credentials
+   - Generate secure passwords for database and admin interfaces
+   - Add your API keys where needed
+
+## Required Environment Variables
+
+### Database Setup
+- `DB_USER`: Your PostgreSQL username
+- `DB_PASSWORD`: Secure password for your database
+- `DATABASE_URL`: Complete PostgreSQL connection string
+
+### Security Keys
+- `SECRET_KEY`: Generate a secure random key for JWT tokens
+  ```bash
+  # Generate a secure secret key:
+  python -c "import secrets; print(secrets.token_urlsafe(32))"
+  ```
+
+### Jupyter Password Hash
+Generate your Jupyter password hash:
+```bash
+jupyter server password
+# Copy the generated hash to JUPYTER_PASSWORD_HASH
+```
+
+### API Keys
+- `OPENAI_API_KEY`: Your OpenAI API key (if using AI features)
+- `LANGSMITH_API_KEY`: Your LangSmith key (optional, for monitoring)
+
+## Important Security Notes
+
+- **Never commit your `.env` file to git**
+- The `.env` file is already in `.gitignore`
+- Use strong, unique passwords for all services
+- Regularly rotate your API keys and passwords
+- For production, use environment-specific values
+
+## Docker Setup
+
+If using Docker, the environment variables will be automatically loaded from your `.env` file when running:
+
+```bash
+docker-compose up
+```
+
+## Verification
+
+After setting up your `.env` file, verify it works by checking if the application starts without environment variable errors.
