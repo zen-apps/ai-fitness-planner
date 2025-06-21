@@ -251,11 +251,15 @@ class FitnessWorkflow:
             workout_preferences = state.get("preferences", {}).get(
                 "workout_preferences", {}
             )
+            
+            # Use profile's workout_frequency if available, otherwise default to 3
+            profile_workout_freq = profile.workout_frequency if profile else 3
+            
             request = WorkoutPlanRequest(
                 user_id=state["user_id"],
                 split_type=workout_preferences.get("split_type", "full_body"),
                 training_style=workout_preferences.get("training_style", "hypertrophy"),
-                days_per_week=workout_preferences.get("days_per_week", 3),
+                days_per_week=workout_preferences.get("days_per_week", profile_workout_freq),
             )
 
             workout_plan = await self.workout_agent.generate_workout_plan(

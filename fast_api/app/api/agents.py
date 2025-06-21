@@ -780,7 +780,10 @@ async def generate_complete_fitness_plan(
         if not meal_request:
             meal_request = MealPlanRequest(user_id=user_id)
         if not workout_request:
-            workout_request = WorkoutPlanRequest(user_id=user_id)
+            workout_request = WorkoutPlanRequest(
+                user_id=user_id,
+                days_per_week=profile.workout_frequency
+            )
 
         # Create meal agent with appropriate database setting
         dynamic_meal_agent = MealPlannerAgent(use_o3_mini=True, use_full_database=use_full_database)
