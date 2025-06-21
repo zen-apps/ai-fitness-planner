@@ -171,13 +171,13 @@ def display_hybrid_results(results):
 
 
 # Database selection
-st.subheader("📊 Database Settings")
-use_full_database = st.checkbox(
-    "Use full USDA database", 
-    value=False,
-    help="Use the complete USDA database vs the sample dataset. Requires full database to be imported."
-)
-
+# st.subheader("📊 Database Settings")
+# use_full_database = st.checkbox(
+#     "Use full USDA database",
+#     value=False,
+#     help="Use the complete USDA database vs the sample dataset. Requires full database to be imported."
+# )
+use_full_database = False
 # Database availability check
 if use_full_database:
     try:
@@ -189,7 +189,9 @@ if use_full_database:
             )
             use_full_database = False  # Override to use sample
         else:
-            st.success(f"✅ Full database available with {db_status['full_database']['document_count']:,} foods")
+            st.success(
+                f"✅ Full database available with {db_status['full_database']['document_count']:,} foods"
+            )
     except Exception as e:
         st.warning(f"⚠️ Could not check database availability: {str(e)}")
         use_full_database = False

@@ -17,7 +17,7 @@ with st.sidebar:
         "Number of days for meal plan",
         options=[1, 2, 3, 4, 5, 6, 7],
         index=0,  # Default to 1 day
-        help="Choose how many days of meal planning to generate. Fewer days = faster generation."
+        help="Choose how many days of meal planning to generate. Fewer days = faster generation.",
     )
 
 st.header("📊 Complete Fitness Plan")
@@ -39,7 +39,9 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🍽️ Meal Plan Settings")
-    st.info(f"Meal plan will be generated for {meal_plan_days} day{'s' if meal_plan_days > 1 else ''}")
+    st.info(
+        f"Meal plan will be generated for {meal_plan_days} day{'s' if meal_plan_days > 1 else ''}"
+    )
 
 with col2:
     st.subheader("💪 Workout Settings")
@@ -55,21 +57,18 @@ with col2:
         st.info("Workout frequency is configured in your profile settings")
 
 # AI Model Settings
-st.subheader("🤖 AI Model Settings")
-col1, col2 = st.columns(2)
+st.sidebar.subheader("🤖 AI Model Settings")
+use_o3_mini = st.sidebar.checkbox(
+    "Use O3-mini Reasoning (takes longer, better results)", value=True
+)
 
-with col1:
-    use_o3_mini = st.checkbox(
-        "Use O3-mini Reasoning (takes longer, better results)", value=False
-    )
-
-with col2:
-    use_full_database = st.checkbox(
-        "Use full USDA database",
-        value=False,
-        help="Use the complete USDA database vs the sample dataset. Requires full database to be imported.",
-    )
-
+# with col2:
+#     use_full_database = st.checkbox(
+#         "Use full USDA database",
+#         value=False,
+#         help="Use the complete USDA database vs the sample dataset. Requires full database to be imported.",
+#     )
+use_full_database = False
 # Database availability check
 if use_full_database:
     # Check if full database is available
@@ -150,7 +149,9 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
             # Display daily meal plans in structured format
             if meal_plan.get("daily_plans"):
                 plan_days = len(meal_plan["daily_plans"])
-                with st.expander(f"📋 {plan_days}-Day Detailed Meal Plan", expanded=True):
+                with st.expander(
+                    f"📋 {plan_days}-Day Detailed Meal Plan", expanded=True
+                ):
                     for day_plan in meal_plan["daily_plans"]:
                         day_name = (
                             day_plan.get("day_name")
