@@ -215,16 +215,18 @@ class FitnessWorkflow:
 
             # Create meal plan request
             meal_preferences = state.get("preferences", {}).get("meal_preferences", {})
+            days = meal_preferences.get("days", 7)
             request = MealPlanRequest(
                 user_id=state["user_id"],
                 meal_count=meal_preferences.get("meal_count", 3),
+                days=days,
             )
 
             meal_plan = await self.meal_agent.generate_meal_plan(profile, request)
             state["meal_plan"] = meal_plan
 
             state["messages"].append(
-                SystemMessage(content="Meal plan generated for 7 days")
+                SystemMessage(content=f"Meal plan generated for {days} day{'s' if days > 1 else ''}")
             )
 
         except Exception as e:

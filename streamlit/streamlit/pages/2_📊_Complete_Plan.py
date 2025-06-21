@@ -10,6 +10,16 @@ st.set_page_config(
 init_session_state()
 setup_api_settings_sidebar()
 
+# Add meal plan days selector in sidebar
+with st.sidebar:
+    st.subheader("🍽️ Meal Plan Settings")
+    meal_plan_days = st.selectbox(
+        "Number of days for meal plan",
+        options=[1, 2, 3, 4, 5, 6, 7],
+        index=0,  # Default to 1 day
+        help="Choose how many days of meal planning to generate. Fewer days = faster generation."
+    )
+
 st.header("📊 Complete Fitness Plan")
 
 if not st.session_state.get("current_profile") and not FitnessAPI.get_profile(
@@ -29,7 +39,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🍽️ Meal Plan Settings")
-    st.info("Meal plan will be generated for 7 days")
+    st.info(f"Meal plan will be generated for {meal_plan_days} day{'s' if meal_plan_days > 1 else ''}")
 
 with col2:
     st.subheader("💪 Workout Settings")
@@ -86,7 +96,7 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
         progress_bar.progress(20)
 
         result = FitnessAPI.generate_langgraph_plan(
-            st.session_state.user_id, use_o3_mini, use_full_database
+            st.session_state.user_id, use_o3_mini, use_full_database, meal_plan_days
         )
 
         if result:
@@ -139,7 +149,8 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
 
             # Display daily meal plans in structured format
             if meal_plan.get("daily_plans"):
-                with st.expander("📋 7-Day Detailed Meal Plan", expanded=True):
+                plan_days = len(meal_plan["daily_plans"])
+                with st.expander(f"📋 {plan_days}-Day Detailed Meal Plan", expanded=True):
                     for day_plan in meal_plan["daily_plans"]:
                         day_name = (
                             day_plan.get("day_name")

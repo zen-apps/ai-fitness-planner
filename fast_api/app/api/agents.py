@@ -49,6 +49,7 @@ class UserProfile(BaseModel):
 class MealPlanRequest(BaseModel):
     user_id: str
     meal_count: Optional[int] = 5
+    days: Optional[int] = 7
     preferences: Optional[Dict[str, Any]] = {}
 
 
@@ -105,7 +106,7 @@ class DailyMealPlan(BaseModel):
 
 class MealPlanStructured(BaseModel):
     plan_name: str = Field(description="Name/title for this meal plan")
-    days: List[DailyMealPlan] = Field(description="7-day meal plan")
+    days: List[DailyMealPlan] = Field(description="Meal plan for specified number of days")
     target_macros: MealMacros = Field(description="Daily target macros")
     key_principles: List[str] = Field(
         description="Key nutritional principles followed in this plan"
@@ -260,7 +261,7 @@ class ProfileManagerAgent:
             db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
             profiles = db["user_profiles"]
 
-            profile_dict = profile.dict()
+            profile_dict = profile.model_dump()
             profiles.update_one(
                 {"user_id": profile.user_id}, {"$set": profile_dict}, upsert=True
             )
@@ -509,7 +510,7 @@ class MealPlannerAgent:
                 - Allergies: {profile.allergies or []}
                 - Dietary Preferences: {profile.dietary_preferences or []}
                 
-                Create a complete 7-day meal plan with {request.meal_count} meals per day.
+                Create a complete {request.days}-day meal plan with {request.meal_count} meals per day.
                 Two of the meals (Snack 1 and Snack 2) should be high protein snacks.
                 Focus on whole foods, meeting macro targets, and creating variety.
                 Use the available foods from the database when possible, but supplement with common whole foods.
