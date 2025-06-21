@@ -47,7 +47,7 @@ def download_usda_sample_data():
 
 def wait_for_api():
     """Wait for the FastAPI server to be ready"""
-    api_base = "http://localhost:8000"
+    api_base = "http://fast_api_ai_fitness_planner:8000"
     max_retries = 30
     retry_delay = 2
     
@@ -80,12 +80,12 @@ def setup_demo_database():
     if not wait_for_api():
         return False
     
-    api_base = "http://localhost:8000"
+    api_base = "http://fast_api_ai_fitness_planner:8000"
     
     try:
         # Test MongoDB connection
         print("🔍 Testing MongoDB connection...")
-        response = requests.get(f"{api_base}/test_mongo_db/")
+        response = requests.get(f"{api_base}/v1/nutrition_setup/test_mongo_db/")
         if response.status_code != 200:
             print(f"❌ MongoDB connection failed: {response.text}")
             return False
@@ -93,7 +93,7 @@ def setup_demo_database():
         
         # Import sample data
         print("📥 Importing sample USDA data...")
-        response = requests.post(f"{api_base}/nutrition_setup/import_sampled_data/")
+        response = requests.post(f"{api_base}/v1/nutrition_setup/import_sampled_data/")
         if response.status_code != 200:
             print(f"❌ Failed to import sample data: {response.text}")
             return False
@@ -103,7 +103,7 @@ def setup_demo_database():
         
         # Get database stats
         print("📊 Getting database statistics...")
-        response = requests.get(f"{api_base}/nutrition_setup/database_stats/")
+        response = requests.get(f"{api_base}/v1/nutrition_setup/database_stats/")
         if response.status_code == 200:
             stats = response.json()
             print(f"📊 Database contains {stats.get('total_foods', 'N/A')} foods")
@@ -123,12 +123,12 @@ def setup_full_database():
     if not wait_for_api():
         return False
     
-    api_base = "http://localhost:8000"
+    api_base = "http://fast_api_ai_fitness_planner:8000"
     
     try:
         # Test MongoDB connection
         print("🔍 Testing MongoDB connection...")
-        response = requests.get(f"{api_base}/test_mongo_db/")
+        response = requests.get(f"{api_base}/v1/nutrition_setup/test_mongo_db/")
         if response.status_code != 200:
             print(f"❌ MongoDB connection failed: {response.text}")
             return False
@@ -136,7 +136,7 @@ def setup_full_database():
         
         # Download full USDA data
         print("📥 Downloading full USDA dataset (this may take several minutes)...")
-        response = requests.post(f"{api_base}/nutrition_setup/download_raw_usda_data/", timeout=600)
+        response = requests.post(f"{api_base}/v1/nutrition_setup/download_raw_usda_data/", timeout=600)
         if response.status_code != 200:
             print(f"❌ Failed to download USDA data: {response.text}")
             return False
@@ -144,7 +144,7 @@ def setup_full_database():
         
         # Import full data
         print("📥 Importing full USDA dataset (this will take 10-15 minutes)...")
-        response = requests.post(f"{api_base}/nutrition_setup/import_usda_data/", timeout=1200)
+        response = requests.post(f"{api_base}/v1/nutrition_setup/import_usda_data/", timeout=1200)
         if response.status_code != 200:
             print(f"❌ Failed to import USDA data: {response.text}")
             return False
@@ -154,7 +154,7 @@ def setup_full_database():
         
         # Get database stats
         print("📊 Getting database statistics...")
-        response = requests.get(f"{api_base}/nutrition_setup/database_stats/")
+        response = requests.get(f"{api_base}/v1/nutrition_setup/database_stats/")
         if response.status_code == 200:
             stats = response.json()
             print(f"📊 Database contains {stats.get('total_foods', 'N/A')} foods")
