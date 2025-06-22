@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from utils.api_client import FitnessAPI, init_session_state
 from utils.footer import render_footer
+from utils.sidebar import render_sidebar_disclaimer
 
 # Configure page
 st.set_page_config(
@@ -10,6 +11,9 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
+
+# Add disclaimer to sidebar
+render_sidebar_disclaimer()
 
 st.header("🔍 Food Database Search")
 st.markdown(

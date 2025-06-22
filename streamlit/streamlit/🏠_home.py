@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.api_client import init_session_state
 from utils.footer import render_footer
+from utils.sidebar import render_sidebar_disclaimer
 
 # Configure Streamlit page
 st.set_page_config(
@@ -12,6 +13,9 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
+
+# Add disclaimer to sidebar
+render_sidebar_disclaimer()
 
 # Main content
 st.title("🏋️‍♂️ AI Fitness Planner")

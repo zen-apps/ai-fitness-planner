@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 from utils.api_client import FitnessAPI, init_session_state
 from utils.footer import render_footer
+from utils.sidebar import render_sidebar_disclaimer
 
 
 # Unit conversion functions
@@ -36,6 +37,9 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
+
+# Add disclaimer to sidebar
+render_sidebar_disclaimer()
 
 st.header("👤 User Profile Setup")
 st.markdown("Let's create your personalized fitness profile!")
