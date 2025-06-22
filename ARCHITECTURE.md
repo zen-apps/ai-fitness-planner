@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Fitness Planner leverages **LangGraph**, **LangChain**, and **Large Language Models (LLMs)** to create a sophisticated multi-agent system that generates personalized fitness and nutrition plans. This document provides a comprehensive overview of how these technologies work together to deliver intelligent, adaptive fitness recommendations.
+The AI Fitness Planner leverages **LangGraph**, **LangChain**, and **Large Language Models (LLMs)** to create a sophisticated multi-agent system that generates personalized fitness and nutrition plans. This production-ready system combines intelligent workflow orchestration with comprehensive nutrition databases and modern deployment practices to deliver adaptive fitness recommendations.
 
 ## Table of Contents
 
@@ -66,14 +66,17 @@ graph TB
 
 - **LangGraph**: Workflow orchestration and agent coordination
 - **LangChain**: LLM integration and tool management
-- **GPT-4**: Primary language model for reasoning and generation
+- **GPT-4o-mini & O3-mini**: Primary language models for reasoning and generation
 - **FAISS**: Vector similarity search for nutrition data
-- **MongoDB**: USDA nutrition database (carefully sample 5k of 450K+ branded foods)
+- **MongoDB**: USDA nutrition database with dual-system approach:
+  - Full database: 450K+ branded foods for comprehensive coverage
+  - Sample database: Intelligently sampled 5K foods for fast operations
 - **PostgreSQL**: User profiles and plan storage
-- **FastAPI**: Backend API services
-- **Streamlit**: Interactive frontend with advanced food search
+- **FastAPI**: Backend API services with 4 main router modules
+- **Streamlit**: Multi-page interactive frontend with advanced food search
 - **LangSmith**: Comprehensive observability and tracing
-- **OpenAI Embeddings**: Enhanced text embeddings
+- **OpenAI Embeddings**: Enhanced text embeddings (text-embedding-3-small)
+- **Docker**: Production deployment with docker-compose setup
 
 ---
 
@@ -306,14 +309,15 @@ def coordinate_plans(state: FitnessState):
 
 ### Model Selection
 
-**Primary Model**: GPT-4
-- Superior reasoning capabilities
-- Better understanding of complex nutritional concepts
-- Improved instruction following for structured outputs
+**Primary Model**: GPT-4o-mini
+- Excellent performance-to-cost ratio
+- Fast response times for production use
+- Strong reasoning capabilities for fitness and nutrition tasks
+- Configurable model switching (supports O3-mini for complex reasoning)
 
 **Alternative Models**: 
-- **GPT-3.5-turbo**: For simpler tasks, cost optimization for basic operations, faster response times for simple queries
-- **o1-mini**: For complex reasoning tasks requiring enhanced problem-solving capabilities
+- **GPT-4o-mini**: Primary model for fast, cost-effective operations with excellent performance
+- **O3-mini**: For complex reasoning tasks requiring enhanced problem-solving capabilities (configurable per request)
 
 ### Prompt Engineering Strategies
 
@@ -521,11 +525,24 @@ def generate_meal_with_rag(meal_type: str, macro_targets: dict):
 
 ---
 
-# Sampled Foods Process
+# Dual Database System & Smart Food Sampling
 
-## Overview
+### Overview
 
-The AI Fitness Planner implements a sophisticated food sampling system that creates representative subsets of the massive USDA nutrition database for efficient processing and improved user experience. This system balances comprehensive nutrition data access with performance optimization by intelligently sampling foods across macro categories.
+The AI Fitness Planner implements a sophisticated dual database system that balances comprehensive nutrition data access with optimal performance. This system includes both a full database with 450K+ foods and an intelligently sampled subset of 5K foods.
+
+### Database Selection Strategy
+
+```python
+# Dynamic database selection based on use case
+def get_database_collection(use_full_database: bool = False):
+    collection_name = "branded_foods" if use_full_database else "branded_foods_sample"
+    return db[collection_name]
+```
+
+# Smart Food Sampling Process
+
+The smart sampling system creates representative subsets of the massive USDA nutrition database for efficient processing and improved user experience. This system balances comprehensive nutrition data access with performance optimization by intelligently sampling foods across macro categories.
 
 ## Data Challenge
 
@@ -944,9 +961,11 @@ This sophisticated sampling system demonstrates how intelligent data preprocessi
 
 ## API Endpoints
 
-### LangGraph Endpoints
+### Current API Structure (4 Main Modules)
 
-#### 1. Generate Complete Plan
+#### 1. LangGraph Workflow Module (`/v1/langgraph/`)
+
+##### Generate Complete Plan
 ```
 POST /v1/langgraph/generate-fitness-plan/
 ```
@@ -999,47 +1018,35 @@ POST /v1/langgraph/generate-fitness-plan/
 }
 ```
 
-#### 2. Quick Plan Generation
-```
-POST /v1/langgraph/quick-plan/
-```
-**Description**: Streamlined endpoint for rapid plan generation with minimal input
+#### 2. Agent Module (`/v1/agents/`)
 
-**Request**:
-```json
-{
-    "user_id": "string",
-    "goal": "cut|bulk|maintenance|recomp",
-    "activity_level": "sedentary|lightly_active|moderately_active|very_active"
-}
-```
-
-#### 3. Test Workflow
-```
-GET /v1/langgraph/test-workflow/
-```
-**Description**: Tests the LangGraph workflow with sample data
-
-#### 4. Test Vector Search
-```
-GET /v1/langgraph/test-vector-search/
-```
-**Description**: Tests the FAISS vector search functionality
-
-### Individual Agent Endpoints
-
-#### Profile Management
+##### Profile Management
 ```
 POST /v1/agents/profile/
 GET /v1/agents/profile/{user_id}
 ```
 
-#### Nutrition Search Endpoints
+##### Complete Plan Generation
+```
+POST /v1/agents/complete-plan/
+```
+**Description**: Direct agent-based plan generation without LangGraph workflow
+
+#### 3. Nutrition Search Module (`/v1/nutrition_search/`)
+
 ```
 POST /v1/nutrition_search/search_nutrition_semantic/
 POST /v1/nutrition_search/search_nutrition_hybrid/
 POST /v1/nutrition_search/search_nutrition_advanced/
 ```
+
+#### 4. Nutrition Setup Module (`/v1/nutrition_setup/`)
+
+```
+POST /v1/nutrition_setup/sample_usda_data/
+GET /v1/nutrition_setup/test_mongo_connection/
+```
+**Description**: Database management and setup endpoints
 
 **Advanced Search Features**:
 - **Semantic Search**: Natural language queries ("high protein breakfast foods")
@@ -1381,27 +1388,32 @@ This LangSmith integration transforms the AI Fitness Planner from a functional s
 
 ---
 
-## Current Advanced Features
+## Current Production Features
 
-### 1. **Advanced Food Search System**
+### 1. **Multi-Page Streamlit Frontend**
 
-The system now includes a sophisticated food search interface with three distinct modes:
+The application includes a sophisticated multi-page interface:
 
-#### Basic Search
-- Traditional name and brand-based food lookup
-- Fast results for known food items
-- Integrated with MongoDB text search indexes
+#### Application Structure
+```
+streamlit_app/
+├── 🏠_home.py                    # Landing page with overview
+├── pages/
+│   ├── 1_👤_Profile_Setup.py     # User profile management
+│   ├── 2_📊_Complete_Plan.py     # Plan generation interface
+│   └── 3_🔍_Food_Search.py       # Advanced food search
+├── utils/
+│   ├── api_client.py             # FastAPI integration
+│   └── footer.py                 # Footer component
+└── .streamlit/
+    └── config.toml               # Streamlit configuration
+```
 
-#### Semantic Search  
-- Natural language queries ("high protein breakfast options")
-- AI-powered understanding of dietary preferences
-- Automatic dietary restriction filtering
-- Similarity scoring and relevance ranking
-
-#### Advanced Filters
-- **Hybrid Search**: Combines semantic AI with traditional text matching
-- **Nutrition Criteria**: Filter by macro/micronutrient ranges
-- **Dietary Restrictions**: Real-time allergy and preference filtering
+#### Advanced Food Search Interface
+- **Basic Search**: Traditional name and brand-based food lookup
+- **Semantic Search**: Natural language queries ("high protein breakfast options")
+- **Advanced Filters**: Hybrid search with nutrition criteria and dietary restrictions
+- **Real-time Filtering**: Dynamic dietary restriction and nutrition range filtering
 - **Quality Scoring**: Nutrition density and match quality indicators
 
 ```python
@@ -1430,19 +1442,46 @@ def advanced_food_search(
     return scored_results
 ```
 
-### 2. **Enhanced Workflow Coordination**
+### 2. **Production Deployment Architecture**
 
-#### Plan Coordination Node
-A specialized agent that optimizes the interaction between meal and workout plans:
+#### Docker Compose Setup
+```yaml
+services:
+  fastapi:        # Main API service
+  streamlit:      # Frontend application
+  mongodb:        # Primary database
+  postgres:       # User profiles
+  mongo-express:  # Database management UI
+```
 
-- **Pre/Post Workout Nutrition**: Automatic meal timing optimization
+#### Automated Setup Process
+```bash
+# Quick demo setup
+make setup-demo
+
+# Database management
+make clean-db
+make setup-db
+
+# Development
+make dev
+```
+
+#### Database Management
+- **Dual Database System**: Full (450K+ foods) and Sample (5K foods) databases
+- **Automated Data Download**: GitHub releases integration for sample data
+- **Health Checking**: Comprehensive system health monitoring
+- **Setup Scripts**: Automated database initialization with demo mode
+
+### 3. **Enhanced Workflow Coordination**
+
+#### Plan Coordination Node Implementation
+- **Pre/Post Workout Nutrition**: LLM-powered meal timing optimization
 - **Training Day Variations**: Different nutrition on training vs rest days
 - **Recovery Optimization**: Coordinated nutrition and rest periods
-- **Supplement Timing**: Integration of supplement recommendations with meal timing
+- **Dynamic Model Selection**: Configurable GPT-4o-mini vs O3-mini usage
 
 #### Conditional Routing
-Smart workflow routing based on user preferences and experience level:
-
 ```python
 def should_generate_plans(state: FitnessState) -> str:
     """Determines which plans to generate based on user preferences"""
@@ -1458,6 +1497,51 @@ def should_generate_plans(state: FitnessState) -> str:
     else:
         return "profile_only"
 ```
+
+### 4. **Dual Database & Vector Search System**
+
+#### Database Selection Strategy
+```python
+def get_database_collection(use_full_database: bool = False):
+    collection_name = "branded_foods" if use_full_database else "branded_foods_sample"
+    return db[collection_name]
+```
+
+#### Enhanced Search Capabilities
+- **Dual Index System**: Full (450K+) and Sample (5K) food embeddings
+- **Hybrid Search**: Combines semantic AI with traditional text matching
+- **Fallback Mechanisms**: MongoDB search when vector search fails
+- **Smart Filtering**: Dietary restrictions and nutritional criteria
+- **Source Attribution**: Tracks search result origins and relevance
+
+---
+
+## Production System Status
+
+### Current Implementation State
+
+#### ✅ **Fully Implemented Features**
+- **LangGraph Workflow**: Complete multi-agent orchestration with plan coordination
+- **Dual Database System**: Full (450K+) and Sample (5K) databases with dynamic selection
+- **Multi-Page Frontend**: Professional Streamlit interface with 4 main pages
+- **Production Deployment**: Docker Compose setup with 5 services
+- **Advanced Search**: Hybrid vector + text search with dietary filtering
+- **Model Selection**: Dynamic GPT-4o-mini/O3-mini switching per request
+- **Automated Setup**: Make commands for demo setup and database management
+- **Health Monitoring**: Comprehensive system health checking
+- **LangSmith Integration**: Complete tracing and observability setup
+
+#### ⚠️ **Partially Implemented Features**
+- **Plan Coordination**: Basic implementation exists, could be enhanced
+- **Vector Search Testing**: API endpoints for testing not fully implemented
+- **Cost Tracking**: LangSmith configured but detailed cost analysis needs development
+
+#### ❌ **Missing from Original Architecture Document**
+- Quick Plan Generation endpoint (`/v1/langgraph/quick-plan/`)
+- Test Workflow endpoint (`/v1/langgraph/test-workflow/`)
+- Test Vector Search endpoint (`/v1/langgraph/test-vector-search/`)
+- Progress Tracking Agent (future enhancement)
+- Supplement Advisor Agent (future enhancement)
 
 ---
 
@@ -1594,18 +1678,34 @@ def log_workflow_execution(workflow_id: str, step: str, duration: float):
 
 ## Conclusion
 
-The AI Fitness Planner represents a sophisticated application of LangGraph and LLM technologies to create personalized, intelligent fitness and nutrition recommendations. By orchestrating multiple specialized agents through LangGraph workflows, the system delivers comprehensive plans that consider user goals, preferences, restrictions, and available resources.
+The AI Fitness Planner represents a production-ready application of LangGraph and LLM technologies that demonstrates how to build sophisticated multi-agent systems for personalized recommendations. The current implementation successfully combines intelligent workflow orchestration with comprehensive nutrition databases, modern deployment practices, and a professional user interface.
 
-The architecture demonstrates several key advantages:
+### Key Architectural Achievements
 
-- **Multi-agent coordination** enables complex reasoning beyond single LLM capabilities
-- **Vector search integration** provides access to vast nutrition databases
-- **State management** ensures consistency across all plan components
-- **Modular design** allows for easy expansion and improvement
+- **Production-Ready Deployment**: Complete Docker Compose setup with automated database management
+- **Dual Database Architecture**: Intelligent balance between comprehensive data and performance optimization
+- **Multi-Agent Coordination**: Sophisticated LangGraph workflows with plan coordination and conditional routing
+- **Professional Frontend**: Multi-page Streamlit interface with advanced search capabilities
+- **Observability**: Complete LangSmith integration for monitoring and debugging
+- **Dynamic Model Selection**: Flexible GPT-4o-mini/O3-mini switching based on complexity requirements
 
-This implementation serves as a practical example of how LangGraph can be used to build production-ready applications that combine the reasoning capabilities of LLMs with structured data and domain-specific logic.
+### Technical Innovations
 
-The system's ability to generate personalized, actionable fitness plans while maintaining transparency in decision-making makes it a powerful tool for both users seeking fitness guidance and developers learning to implement LangGraph workflows.
+- **Smart Food Sampling**: 98% database size reduction while maintaining nutritional diversity
+- **Hybrid Search System**: Combines semantic AI with traditional text matching for optimal results
+- **Structured LLM Output**: Comprehensive Pydantic models ensure reliable AI responses
+- **Health Monitoring**: Proactive system health checking and error recovery
+
+### Production Readiness
+
+The system demonstrates how LangGraph can be used to build production-ready applications that:
+- Handle real user traffic with Docker deployment
+- Provide consistent, reliable responses through structured outputs
+- Scale efficiently with intelligent data management
+- Maintain transparency through comprehensive tracing
+- Offer professional user experiences through modern interfaces
+
+This implementation serves as a comprehensive example for developers looking to build production LangGraph applications that combine the reasoning capabilities of LLMs with structured data, domain expertise, and robust system architecture.
 
 ---
 
