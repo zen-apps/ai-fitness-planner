@@ -6,10 +6,6 @@ Full-stack GenAI system that creates personalized fitness and nutrition plans us
 
 ---
 
-<a href="https://labs.joshjanzen.com/"><img src="https://img.shields.io/badge/🔗_Live-Demo-brightgreen?style=for-the-badge" alt="Live Demo (Google Login Required)"></a>
-
----
-
 ## 🚀 Quick Start (5 minutes)
 
 **Prerequisites**: Docker and Git
@@ -32,6 +28,16 @@ make setup-demo
 **That's it!** Access your app:
 - **Frontend**: http://localhost:8526
 - **API Docs**: http://localhost:1015/docs
+
+---
+
+<!-- Option 2: Text below the badge -->
+<p align="center">
+  <a href="https://labs.joshjanzen.com/">
+    <img src="https://img.shields.io/badge/🔗_Live-Demo-brightgreen?style=for-the-badge" alt="Live Demo">
+  </a><br>
+  <em><small>Google login required</small></em>
+</p>
 
 ---
 
