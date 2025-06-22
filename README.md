@@ -10,6 +10,11 @@ A production-ready GenAI system for personalized fitness and nutrition planning 
 - Docker and Docker Compose installed
 - Git for cloning the repository
 
+**⚠️ Important**: Make sure Docker is running before proceeding:
+- **macOS**: Start Docker Desktop (`open -a Docker` or click the Docker icon)
+- **Linux**: Start Docker daemon (`sudo systemctl start docker`)
+- **Windows**: Start Docker Desktop
+
 ### Demo Setup (2 minutes)
 ```bash
 # 1. Clone the repository
