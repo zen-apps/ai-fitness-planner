@@ -15,7 +15,7 @@ A production-ready GenAI system for personalized fitness and nutrition planning 
 - **Linux**: Start Docker daemon (`sudo systemctl start docker`)
 - **Windows**: Start Docker Desktop
 
-### Demo Setup (2 minutes)
+### Demo Setup (about 5 minutes)
 ```bash
 # 1. Clone the repository
 git clone https://github.com/zen-apps/ai-fitness-planner.git
