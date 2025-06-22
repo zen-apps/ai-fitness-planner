@@ -1,5 +1,7 @@
 # AI Fitness Planner 🏋️‍♂️
 
+![AI Fitness Planner Demo](ai_fitness_planner.gif)
+
 Full-stack GenAI system that creates personalized fitness and nutrition plans using **LangGraph workflows**, real USDA nutrition data, and coordinated AI agents.
 
 **What it does**: Upload your profile, get a complete meal + workout plan in minutes. It's like having a personal trainer and nutritionist, but powered by AI.
