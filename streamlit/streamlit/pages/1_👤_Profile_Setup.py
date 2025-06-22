@@ -1,15 +1,18 @@
 import streamlit as st
 from datetime import datetime
-from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_sidebar
+from utils.api_client import FitnessAPI, init_session_state
+
 
 # Unit conversion functions
 def kg_to_lbs(kg):
     """Convert kilograms to pounds"""
     return kg * 2.20462
 
+
 def lbs_to_kg(lbs):
     """Convert pounds to kilograms"""
     return lbs / 2.20462
+
 
 def cm_to_ft_in(cm):
     """Convert centimeters to feet and inches"""
@@ -17,6 +20,7 @@ def cm_to_ft_in(cm):
     feet = int(total_inches // 12)
     inches = total_inches % 12
     return feet, inches
+
 
 def ft_in_to_cm(feet, inches):
     """Convert feet and inches to centimeters"""
@@ -26,14 +30,11 @@ def ft_in_to_cm(feet, inches):
 
 # Configure page
 st.set_page_config(
-    page_title="Profile Setup - AI Fitness Planner",
-    page_icon="👤",
-    layout="wide"
+    page_title="Profile Setup - AI Fitness Planner", page_icon="👤", layout="wide"
 )
 
 # Initialize session state and setup sidebar
 init_session_state()
-setup_api_settings_sidebar()
 
 st.header("👤 User Profile Setup")
 st.markdown("Let's create your personalized fitness profile!")
@@ -70,19 +71,21 @@ if existing_profile:
     st.success("✅ Profile found! You can update it below.")
     st.session_state.current_profile = existing_profile
 else:
-    st.info("🆕 No profile found. Let's create your first profile to get started with personalized fitness planning!")
+    st.info(
+        "🆕 No profile found. Let's create your first profile to get started with personalized fitness planning!"
+    )
 
 with st.form("profile_form"):
     st.subheader("Basic Information")
-    
+
     # Unit system selection
     unit_system = st.selectbox(
         "Unit System",
         ["Imperial (lbs/ft)", "Metric (kg/cm)"],
         index=0,  # Default to Imperial (non-metric)
-        help="Choose your preferred unit system for input. Data will be converted to metric for calculations."
+        help="Choose your preferred unit system for input. Data will be converted to metric for calculations.",
     )
-    
+
     is_metric = unit_system.startswith("Metric")
 
     col1, col2 = st.columns(2)
@@ -135,7 +138,7 @@ with st.form("profile_form"):
             # Convert existing height from cm to feet and inches for display
             existing_height_cm = existing_profile.get("height", 175.0)
             existing_feet, existing_inches = cm_to_ft_in(existing_height_cm)
-            
+
             col_ft, col_in = st.columns(2)
             with col_ft:
                 height_feet = st.number_input(
@@ -162,6 +165,40 @@ with st.form("profile_form"):
                 existing_profile.get("fitness_goal", "maintenance")
             ),
         )
+
+        # Add expander with goal explanations in sidebar
+        with st.sidebar:
+            with st.expander("ℹ️ Primary Goal Guide"):
+                st.markdown(
+                    """
+                **Cut** 🔥
+                - Lose fat while preserving muscle
+                - 20% calorie deficit
+                - Focus on lean proteins
+                - Faster visible results
+                
+                **Bulk** 💪
+                - Build muscle and gain weight
+                - 20% calorie surplus
+                - Emphasize protein intake
+                - Expect some fat gain
+                
+                **Maintenance** ⚖️
+                - Maintain current weight
+                - Balanced nutrition approach
+                - Sustainable long-term strategy
+                - Good for beginners
+                
+                **Recomp** 🎯
+                - Build muscle AND lose fat
+                - Maintenance calories
+                - High protein focus
+                - Slower but quality changes
+                """
+                )
+                st.info(
+                    "💡 **Tip:** Recomp works best for beginners or those returning to fitness after a break!"
+                )
 
         workout_frequency = st.number_input(
             "Workout Days per Week",
@@ -201,8 +238,10 @@ with st.form("profile_form"):
 
     # Show conversion info for imperial users
     if not is_metric:
-        st.info(f"📊 Values that will be sent to API: Weight: {weight_kg:.1f} kg, Height: {height_cm:.1f} cm")
-    
+        st.info(
+            f"📊 Values that will be sent to API: Weight: {weight_kg:.1f} kg, Height: {height_cm:.1f} cm"
+        )
+
     submitted = st.form_submit_button("💾 Save Profile", use_container_width=True)
 
     if submitted:
@@ -238,9 +277,7 @@ with st.form("profile_form"):
                 col1, col2, col3, col4 = st.columns(4)
 
                 with col1:
-                    st.metric(
-                        "Daily Calories", f"{result.get('target_calories', 0):,}"
-                    )
+                    st.metric("Daily Calories", f"{result.get('target_calories', 0):,}")
 
                 with col2:
                     st.metric("Protein", f"{result.get('target_protein_g', 0)}g")

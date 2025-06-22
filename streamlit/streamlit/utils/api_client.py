@@ -87,7 +87,7 @@ class FitnessAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             # Only show error for non-404/500 status codes
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 if e.response.status_code in [404, 500]:
                     return {}
             st.error(f"Error getting profile: {str(e)}")
@@ -117,7 +117,12 @@ class FitnessAPI:
             return {}
 
     @staticmethod
-    def generate_langgraph_plan(user_id: str, use_o3_mini: bool = True, use_full_database: bool = False, meal_plan_days: int = 1) -> Dict[str, Any]:
+    def generate_langgraph_plan(
+        user_id: str,
+        use_o3_mini: bool = True,
+        use_full_database: bool = False,
+        meal_plan_days: int = 1,
+    ) -> Dict[str, Any]:
         """Generate fitness plan using LangGraph workflow"""
         api_url = FitnessAPI.get_api_url()
         try:
@@ -185,19 +190,3 @@ def init_session_state():
         st.session_state.current_profile = {}
     if "api_url_override" not in st.session_state:
         st.session_state.api_url_override = API_BASE_URL
-
-
-def setup_api_settings_sidebar():
-    """Setup API settings in sidebar"""
-    with st.sidebar:
-        with st.expander("🔧 API Settings"):
-            new_url = st.text_input(
-                "Override API URL:", value=st.session_state.api_url_override
-            )
-            if st.button("Update URL"):
-                st.session_state.api_url_override = new_url.strip().rstrip("/")
-                st.success("URL updated!")
-                st.rerun()
-
-        # Show current API URL
-        current_url = FitnessAPI.get_api_url()

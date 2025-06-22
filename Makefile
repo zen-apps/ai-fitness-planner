@@ -3,6 +3,13 @@ BE_CONTAINER_NAME := fast_api_ai_fitness_planner
 DOCKER_COMPOSE_FILE  := docker-compose.yml 
 FE_CONTAINER_NAME := streamlit_app_ai_fitness_planner
 
+setup-demo: up
+	@echo "🚀 Setting up DEMO mode - Quick start with sample data (2 minutes)"
+	@echo "Perfect for: Blog demos, LangGraph testing, immediate results"
+	@sleep 10  # Give services time to start
+	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=demo
+	@echo "✅ Demo setup complete! Your AI Fitness Planner is ready for testing."
+
 up: 
 	docker-compose -f $(DOCKER_COMPOSE_FILE)  up -d --build
 
@@ -14,13 +21,11 @@ logs-be:
 
 logs-fe:
 	docker logs $(FE_CONTAINER_NAME) -f --tail 150
-
-setup-demo: up
-	@echo "🚀 Setting up DEMO mode - Quick start with sample data (2 minutes)"
-	@echo "Perfect for: Blog demos, LangGraph testing, immediate results"
-	@sleep 10  # Give services time to start
-	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=demo
-	@echo "✅ Demo setup complete! Your AI Fitness Planner is ready for testing."
+	
+clean:
+	@echo "🧼 Cleaning up Docker images and containers..."
+	docker-compose -f $(DOCKER_COMPOSE_FILE) down --volumes --remove-orphans
+	@echo "✅ All containers and volumes removed."
 
 clean-db:
 	@echo "🧹 Cleaning nutrition database..."
@@ -49,8 +54,3 @@ help:
 
 .PHONY: up logs logs-be logs-fe setup-demo db-stats test-search clean-db help
 
-# Cleanup commands
-clean:
-	@echo "🧼 Cleaning up Docker images and containers..."
-	docker-compose -f $(DOCKER_COMPOSE_FILE) down --volumes --remove-orphans
-	@echo "✅ All containers and volumes removed."

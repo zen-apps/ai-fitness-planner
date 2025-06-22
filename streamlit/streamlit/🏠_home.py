@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.api_client import init_session_state, setup_api_settings_sidebar
+from utils.api_client import init_session_state
 
 # Configure Streamlit page
 st.set_page_config(
@@ -11,7 +11,6 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
-setup_api_settings_sidebar()
 
 # Main content
 st.title("🏋️‍♂️ AI Fitness Planner")
