@@ -32,7 +32,7 @@ make setup-demo
 ---
 
 <!-- Option 2: Text below the badge -->
-<p align="center">
+<p align="left">
   <a href="https://labs.joshjanzen.com/">
     <img src="https://img.shields.io/badge/🔗_Live-Demo-brightgreen?style=for-the-badge" alt="Live Demo">
   </a><br>
