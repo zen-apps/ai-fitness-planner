@@ -54,16 +54,16 @@ graph TD
 
 ### Technology Stack
 
-- **LangGraph 0.2.72**: Workflow orchestration and agent coordination
-- **LangChain 0.3.25**: LLM integration and tool management
+- **LangGraph**: Workflow orchestration and agent coordination
+- **LangChain**: LLM integration and tool management
 - **GPT-4**: Primary language model for reasoning and generation
-- **FAISS 1.10.0**: Vector similarity search for nutrition data
+- **FAISS**: Vector similarity search for nutrition data
 - **MongoDB**: USDA nutrition database (300K+ branded foods)
 - **PostgreSQL**: User profiles and plan storage
 - **FastAPI**: Backend API services
 - **Streamlit**: Interactive frontend with advanced food search
-- **LangSmith 0.3.45**: Comprehensive observability and tracing
-- **Sentence Transformers 3.4.1**: Enhanced text embeddings
+- **LangSmith**: Comprehensive observability and tracing
+- **OpenAI Embeddings**: Enhanced text embeddings
 
 ---
 
@@ -301,9 +301,9 @@ def coordinate_plans(state: FitnessState):
 - Better understanding of complex nutritional concepts
 - Improved instruction following for structured outputs
 
-**Alternative Models**: GPT-3.5-turbo for simpler tasks
-- Cost optimization for basic operations
-- Faster response times for simple queries
+**Alternative Models**: 
+- **GPT-3.5-turbo**: For simpler tasks, cost optimization for basic operations, faster response times for simple queries
+- **o1-mini**: For complex reasoning tasks requiring enhanced problem-solving capabilities
 
 ### Prompt Engineering Strategies
 
@@ -379,8 +379,8 @@ OUTPUT_SCHEMA = {
    - Agent calculates BMR, TDEE, and macro targets
    - Results stored in workflow state
 
-3. **Parallel Plan Generation**
-   - Meal Planner and Workout Planner agents run in parallel
+3. **Plan Generation**
+   - Meal Planner and Workout Planner agents process user profile data
    - Each agent has access to profile data from state
    - Vector search and database queries executed
 
@@ -1132,11 +1132,11 @@ LangSmith has been successfully integrated into the AI Fitness Planner to provid
 **Current Dependencies:**
 ```python
 # fast_api/requirements.txt
-langgraph==0.2.72
-langsmith==0.3.45
-langchain==0.3.25
-faiss-cpu==1.10.0
-sentence-transformers==3.4.1
+langgraph
+langsmith
+langchain
+faiss-cpu
+openai
 ```
 
 **Environment Configuration:**
@@ -1339,12 +1339,9 @@ async def generate_fitness_plan_endpoint(request: FitnessPlanRequest):
         # Profile management (traced)
         profile_result = await manage_profile(workflow_state)
         
-        # Parallel plan generation (both traced)
-        tasks = [
-            plan_meals(profile_result),
-            plan_workout(profile_result)
-        ]
-        meal_plan, workout_plan = await asyncio.gather(*tasks)
+        # Plan generation (both traced)
+        meal_plan = await plan_meals(profile_result)
+        workout_plan = await plan_workout(profile_result)
         
         # Plan synthesis (traced)
         final_plan = synthesize_plans(meal_plan, workout_plan)
@@ -1544,14 +1541,12 @@ def get_food_embeddings(food_id: str):
     return faiss_index.search(food_embeddings[food_id])
 ```
 
-2. **Parallel Processing**
+2. **Async Processing**
 ```python
-async def parallel_agent_execution():
-    tasks = [
-        asyncio.create_task(meal_planner_agent(state)),
-        asyncio.create_task(workout_planner_agent(state))
-    ]
-    results = await asyncio.gather(*tasks)
+async def sequential_agent_execution():
+    meal_plan = await meal_planner_agent(state)
+    workout_plan = await workout_planner_agent(state)
+    return meal_plan, workout_plan
 ```
 
 3. **Database Optimization**
