@@ -2,11 +2,6 @@ import os
 import json
 import logging
 from fastapi import APIRouter, HTTPException
-from pathlib import Path
-import time
-import ijson
-from decimal import Decimal
-from pymongo import MongoClient
 import pymongo
 
 
@@ -19,7 +14,6 @@ logging.basicConfig(
 logger = logging.getLogger("workout_optimization")
 
 nutrition_setup = APIRouter()
-
 
 
 # Fixed MongoDB connection test endpoint
@@ -250,363 +244,6 @@ async def get_database_stats():
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
 
 
-
-
-@nutrition_setup.post("/sample_usda_data/")
-async def sample_usda_data(
-    file_path: str = "./fast_api/app/api/nutrition_data/extracted/FoodData_Central_branded_food_json_2025-04-24.json",
-    sample_size: int = 5000,
-):
-    """Sample USDA Branded Foods data evenly across macro categories from MongoDB and extract from USDA JSON"""
-
-    def convert_decimal_in_dict(d):
-        """Recursively convert all Decimal values to float in a dictionary"""
-        for k, v in d.items():
-            if isinstance(v, Decimal):
-                d[k] = float(v)
-            elif isinstance(v, dict):
-                convert_decimal_in_dict(v)
-            elif isinstance(v, list):
-                for item in v:
-                    if isinstance(item, dict):
-                        convert_decimal_in_dict(item)
-        return d
-
-    def extract_nutrient_by_id(food_nutrients, nutrient_id):
-        """Extract specific nutrient amount by ID"""
-        for nutrient in food_nutrients:
-            if nutrient.get("nutrient", {}).get("id") == nutrient_id:
-                return nutrient.get("amount", 0)
-        return 0
-
-    def calculate_per_100g_values(food_item):
-        """Calculate per-100g nutrition values and add enhanced structure"""
-        serving_size = food_item.get("servingSize", 100)
-
-        if not serving_size or serving_size <= 0:
-            serving_size = 100
-
-        multiplier = 100 / serving_size
-        food_nutrients = food_item.get("foodNutrients", [])
-
-        nutrient_map = {
-            1008: "energy_kcal",
-            1003: "protein_g",
-            1004: "total_fat_g",
-            1005: "carbs_g",
-            1079: "fiber_g",
-            2000: "sugars_g",
-            1093: "sodium_mg",
-            1253: "cholesterol_mg",
-            1258: "saturated_fat_g",
-            1257: "trans_fat_g",
-        }
-
-        per_serving = {}
-        per_100g = {}
-
-        for nutrient_id, nutrient_name in nutrient_map.items():
-            amount = extract_nutrient_by_id(food_nutrients, nutrient_id)
-            per_serving[nutrient_name] = amount
-            per_100g[nutrient_name] = round(amount * multiplier, 2)
-
-        label_nutrients = food_item.get("labelNutrients", {})
-        enhanced_label = {}
-
-        label_mapping = {
-            "calories": "calories",
-            "fat": "fat_g",
-            "saturatedFat": "saturated_fat_g",
-            "transFat": "trans_fat_g",
-            "cholesterol": "cholesterol_mg",
-            "sodium": "sodium_mg",
-            "carbohydrates": "carbs_g",
-            "fiber": "fiber_g",
-            "sugars": "sugars_g",
-            "protein": "protein_g",
-        }
-
-        for label_key, standard_key in label_mapping.items():
-            if label_key in label_nutrients and "value" in label_nutrients[label_key]:
-                enhanced_label[standard_key] = label_nutrients[label_key]["value"]
-
-        food_item["nutrition_enhanced"] = {
-            "serving_info": {
-                "serving_size_g": serving_size,
-                "serving_description": food_item.get("householdServingFullText", ""),
-                "multiplier_to_100g": round(multiplier, 4),
-            },
-            "per_serving": per_serving,
-            "per_100g": per_100g,
-            "label_nutrients_enhanced": enhanced_label,
-            "nutrition_density_score": calculate_nutrition_density_score(per_100g),
-            "macro_breakdown": calculate_macro_breakdown(per_100g),
-        }
-
-        return food_item
-
-    def calculate_nutrition_density_score(per_100g):
-        """Calculate a simple nutrition density score"""
-        try:
-            protein = per_100g.get("protein_g", 0)
-            fiber = per_100g.get("fiber_g", 0)
-            calories = per_100g.get("energy_kcal", 1)
-
-            if calories > 0:
-                return round((protein + fiber) / calories * 100, 2)
-            return 0
-        except:
-            return 0
-
-    def calculate_macro_breakdown(per_100g):
-        """Calculate macronutrient percentages and categorization"""
-        try:
-            protein_g = per_100g.get("protein_g", 0)
-            fat_g = per_100g.get("total_fat_g", 0)
-            carbs_g = per_100g.get("carbs_g", 0)
-
-            calories_from_protein = protein_g * 4
-            calories_from_fat = fat_g * 9
-            calories_from_carbs = carbs_g * 4
-            total_calculated_kcal = (
-                calories_from_protein + calories_from_fat + calories_from_carbs
-            )
-
-            if total_calculated_kcal > 0:
-                pct_protein = (calories_from_protein / total_calculated_kcal) * 100
-                pct_fat = (calories_from_fat / total_calculated_kcal) * 100
-                pct_carbs = (calories_from_carbs / total_calculated_kcal) * 100
-
-                macro_categories = []
-                primary_macro = "balanced"
-
-                if pct_protein >= 40:
-                    macro_categories.append("high_protein")
-                    primary_macro = "high_protein"
-                if pct_fat >= 40:
-                    macro_categories.append("high_fat")
-                    primary_macro = "high_fat"
-                if pct_carbs >= 40:
-                    macro_categories.append("high_carb")
-                    primary_macro = "high_carb"
-
-                if len(macro_categories) > 1:
-                    max_pct = max(pct_protein, pct_fat, pct_carbs)
-                    if max_pct == pct_protein:
-                        primary_macro = "high_protein"
-                    elif max_pct == pct_fat:
-                        primary_macro = "high_fat"
-                    else:
-                        primary_macro = "high_carb"
-
-                return {
-                    "protein_percent": round(pct_protein, 1),
-                    "fat_percent": round(pct_fat, 1),
-                    "carbs_percent": round(pct_carbs, 1),
-                    "total_macro_kcal": round(total_calculated_kcal, 1),
-                    "calories_from_protein": round(calories_from_protein, 1),
-                    "calories_from_fat": round(calories_from_fat, 1),
-                    "calories_from_carbs": round(calories_from_carbs, 1),
-                    "macro_categories": macro_categories,
-                    "primary_macro_category": primary_macro,
-                    "is_high_protein": pct_protein >= 40,
-                    "is_high_fat": pct_fat >= 40,
-                    "is_high_carb": pct_carbs >= 40,
-                    "is_balanced": len(macro_categories) == 0,
-                }
-
-            return {
-                "protein_percent": 0,
-                "fat_percent": 0,
-                "carbs_percent": 0,
-                "total_macro_kcal": 0,
-                "calories_from_protein": 0,
-                "calories_from_fat": 0,
-                "calories_from_carbs": 0,
-                "macro_categories": [],
-                "primary_macro_category": "unknown",
-                "is_high_protein": False,
-                "is_high_fat": False,
-                "is_high_carb": False,
-                "is_balanced": False,
-            }
-        except Exception as e:
-            logger.warning(f"Error calculating macro breakdown: {str(e)}")
-            return {
-                "protein_percent": 0,
-                "fat_percent": 0,
-                "carbs_percent": 0,
-                "total_macro_kcal": 0,
-                "calories_from_protein": 0,
-                "calories_from_fat": 0,
-                "calories_from_carbs": 0,
-                "macro_categories": [],
-                "primary_macro_category": "unknown",
-                "is_high_protein": False,
-                "is_high_fat": False,
-                "is_high_carb": False,
-                "is_balanced": False,
-            }
-
-    try:
-        # Check if file exists
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
-
-        logger.info(
-            f"Starting to sample {sample_size} foods evenly across macro categories from MongoDB..."
-        )
-
-        # Connect to MongoDB and get nutrition_enhanced foods by macro category
-        client = get_mongo_client()
-        db_name = os.getenv("MONGO_DB_NAME", "usda_nutrition")
-        db = client[db_name]
-        collection = db["branded_foods"]
-
-        # Define macro categories for even sampling
-        macro_categories = ["high_protein", "high_fat", "high_carb", "balanced"]
-        foods_per_category = sample_size // len(
-            macro_categories
-        )  # 1250 foods per category
-        remainder = sample_size % len(macro_categories)
-
-        logger.info(
-            f"Sampling {foods_per_category} foods per macro category ({len(macro_categories)} categories)"
-        )
-
-        # Sample evenly from each macro category
-        all_sampled_fdc_ids = []
-        category_counts = {}
-
-        import random
-
-        random.seed(42)  # For reproducible sampling
-
-        for i, category in enumerate(macro_categories):
-            # Calculate sample size for this category (add remainder to first categories)
-            category_sample_size = foods_per_category + (1 if i < remainder else 0)
-
-            # Query MongoDB for foods in this macro category with nutrition_enhanced data
-            query = {
-                "nutrition_enhanced.macro_breakdown.primary_macro_category": category,
-                "nutrition_enhanced": {"$exists": True},
-                "fdcId": {"$exists": True},
-            }
-
-            # Get all foods in this category and sample from them
-            foods_in_category = list(collection.find(query, {"fdcId": 1, "_id": 0}))
-
-            if len(foods_in_category) == 0:
-                logger.warning(f"No foods found for macro category: {category}")
-                continue
-
-            # Sample from available foods in this category
-            if len(foods_in_category) <= category_sample_size:
-                sampled_foods = foods_in_category
-            else:
-                sampled_foods = random.sample(foods_in_category, category_sample_size)
-
-            # Extract fdcIds
-            fdc_ids = [food["fdcId"] for food in sampled_foods]
-            all_sampled_fdc_ids.extend(fdc_ids)
-            category_counts[category] = len(fdc_ids)
-
-            logger.info(
-                f"Sampled {len(fdc_ids)} foods from {category} category (available: {len(foods_in_category)})"
-            )
-
-        client.close()
-
-        logger.info(f"Total fdcIds sampled: {len(all_sampled_fdc_ids)}")
-        logger.info(f"Category distribution: {category_counts}")
-
-        # Now extract these specific foods from the USDA JSON file
-        logger.info("Extracting sampled foods from USDA JSON file...")
-        sampled_foods = []
-        fdc_id_set = set(
-            str(fdc_id) for fdc_id in all_sampled_fdc_ids
-        )  # Convert to strings for comparison
-
-        # Use ijson to stream and extract specific foods
-        with open(file_path, "rb") as f:
-            parser = ijson.items(f, "BrandedFoods.item")
-
-            for food in parser:
-                food_fdc_id = str(food.get("fdcId", ""))
-                if food_fdc_id in fdc_id_set:
-                    sampled_foods.append(food)
-                    fdc_id_set.remove(
-                        food_fdc_id
-                    )  # Remove to avoid duplicates and speed up
-
-                    # Stop when we've found all foods
-                    if not fdc_id_set:
-                        break
-
-        logger.info(f"Successfully extracted {len(sampled_foods)} foods from USDA JSON")
-
-        # Process sampled foods with enhanced nutrition calculations
-        logger.info("Processing sampled foods with enhanced nutrition calculations...")
-        processed_foods = []
-
-        for food in sampled_foods:
-            try:
-                # Convert all Decimal values to float recursively
-                food = convert_decimal_in_dict(food)
-
-                # Add enhanced nutrition calculations
-                food = calculate_per_100g_values(food)
-                processed_foods.append(food)
-
-            except Exception as e:
-                logger.warning(f"Error processing food item: {str(e)}")
-                # Still add the item without enhancement if calculation fails
-                processed_foods.append(food)
-
-        # Create output directory if it doesn't exist
-        output_dir = Path("./fast_api/app/api/nutrition_data/samples")
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save sampled data to file
-        output_file = output_dir / f"usda_sampled_{sample_size}_foods.json"
-
-        sample_data = {
-            "metadata": {
-                "sampled_foods": len(processed_foods),
-                "sample_date": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "source_file": file_path,
-                "random_seed": 42,
-                "sampling_method": "even_distribution_across_macro_categories",
-                "macro_categories": macro_categories,
-                "category_distribution": category_counts,
-                "foods_per_category_target": foods_per_category,
-            },
-            "BrandedFoods": processed_foods,
-        }
-
-        with open(output_file, "w") as f:
-            json.dump(sample_data, f, indent=2)
-
-        logger.info(f"Sample data saved to {output_file}")
-
-        return {
-            "status": "success",
-            "message": f"Successfully sampled {len(processed_foods)} foods evenly across macro categories",
-            "sampled_food_count": len(processed_foods),
-            "category_distribution": category_counts,
-            "output_file": str(output_file),
-            "file_size_mb": round(os.path.getsize(output_file) / (1024 * 1024), 2),
-            "sample_metadata": sample_data["metadata"],
-            "sample_food_example": processed_foods[0] if processed_foods else None,
-        }
-
-    except Exception as e:
-        logger.error(f"Error sampling USDA data: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to sample USDA data: {str(e)}"
-        )
-
-
 @nutrition_setup.post("/import_sampled_data/")
 async def import_sampled_data(
     sample_file: str = "./fast_api/app/api/nutrition_data/samples/usda_sampled_5000_foods.json",
@@ -763,33 +400,35 @@ async def check_database_availability():
     try:
         client = get_mongo_client()
         db = client[os.getenv("MONGO_DB_NAME", "usda_nutrition")]
-        
+
         # Check if full database exists and has data
         full_collection = db["branded_foods"]
         full_count = full_collection.count_documents({})
         full_available = full_count > 0
-        
+
         # Check if sample database exists and has data
         sample_collection = db["branded_foods_sample"]
         sample_count = sample_collection.count_documents({})
         sample_available = sample_count > 0
-        
+
         client.close()
-        
+
         return {
             "full_database": {
                 "available": full_available,
                 "document_count": full_count,
-                "collection_name": "branded_foods"
+                "collection_name": "branded_foods",
             },
             "sample_database": {
                 "available": sample_available,
                 "document_count": sample_count,
-                "collection_name": "branded_foods_sample"
+                "collection_name": "branded_foods_sample",
             },
-            "recommendation": "full" if full_available else "sample" if sample_available else "none"
+            "recommendation": (
+                "full" if full_available else "sample" if sample_available else "none"
+            ),
         }
-        
+
     except Exception as e:
         logger.error(f"Error checking database availability: {str(e)}")
         raise HTTPException(

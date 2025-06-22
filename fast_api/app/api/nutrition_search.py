@@ -4,12 +4,9 @@ import logging
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_core.messages import HumanMessage
+from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.schema import Document
-import numpy as np
-import faiss
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -494,21 +491,6 @@ async def search_nutrition_hybrid(
     except Exception as e:
         logger.error(f"Error in hybrid search: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Hybrid search failed: {str(e)}")
-
-
-@nutrition_search.post("/create_vector_index_full/")
-async def create_vector_index_full(
-    batch_size: int = 1000, max_documents: Optional[int] = None, recreate: bool = False
-):
-    """Create FAISS vector index from full MongoDB nutrition data (branded_foods)"""
-    global vector_store_full
-    return await _create_vector_index(
-        collection_name="branded_foods",
-        index_path="./nutrition_faiss_index_full",
-        batch_size=batch_size,
-        max_documents=max_documents,
-        recreate=recreate,
-    )
 
 
 @nutrition_search.post("/create_vector_index_sample/")
