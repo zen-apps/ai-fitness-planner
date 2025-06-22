@@ -1,228 +1,207 @@
-# AI Fitness Planner
+# AI Fitness Planner 🏋️‍♂️
 
-A production-ready GenAI system for personalized fitness and nutrition planning using LangGraph workflows, real USDA nutrition data, and coordinated AI agents.
+A production-ready GenAI system that creates personalized fitness and nutrition plans using **LangGraph workflows**, real USDA nutrition data, and coordinated AI agents.
 
-## 🚀 Quick Start
-
-**100% Reproducible Setup:**
-
-### Prerequisites
-- Docker and Docker Compose installed
-- Git for cloning the repository
-
-**⚠️ Important**: Make sure Docker is running before proceeding:
-- **macOS**: Start Docker Desktop (`open -a Docker` or click the Docker icon)
-- **Linux**: Start Docker daemon (`sudo systemctl start docker`)
-- **Windows**: Start Docker Desktop
-
-### Demo Setup (about 5 minutes)
-```bash
-# 1. Clone the repository
-git clone https://github.com/zen-apps/ai-fitness-planner.git
-cd ai-fitness-planner
-
-# 2. Copy environment template
-cp .env.example .env
-
-# 3. Download USDA nutrition data (75MB)
-curl -L -o usda_sampled_5000_foods.json https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.0/usda_sampled_5000_foods.json
-
-# 4. Move data to correct location
-mkdir -p fast_api/app/api/nutrition_data/samples/
-mv usda_sampled_5000_foods.json fast_api/app/api/nutrition_data/samples/
-
-# 5. Start the application
-make setup-demo
-```
-
-### What You Get
-- ✅ 5,000 curated foods covering all major categories
-- ✅ AI-powered meal planning with LangGraph workflows  
-- ✅ Semantic nutrition search with FAISS
-- ✅ Complete Streamlit frontend
-- ✅ FastAPI backend with MongoDB
-- ✅ Perfect for demonstrations and testing
-
-### Access Your App
-- **Frontend**: http://localhost:8526
-- **API Docs**: http://localhost:1015/docs
-- **MongoDB UI**: http://localhost:8084 (admin/admin)
-
-## 🛠️ Development & Testing
-
-### Environment Setup
-```bash
-# Edit .env file with your API keys (required for AI features)
-# At minimum, add your OpenAI API key:
-OPENAI_API_KEY=sk-your_openai_api_key_here
-```
-
-### Available Commands
-```bash
-make help              # Show all available commands
-make up               # Start services without database setup
-make logs             # View all service logs
-make logs-be          # Backend logs only
-make logs-fe          # Frontend logs only
-make clean-db         # Reset database
-```
-
-### Testing the Setup
-```bash
-# Check if services are running
-docker-compose ps
-
-# Test API health
-curl http://localhost:1015/docs
-
-# Check database stats
-curl http://localhost:1015/database_stats
-```
-
-## 🏗️ Architecture
-
-### **Core Components**  
-- **LangGraph Workflows**: Orchestrated AI agents for meal planning
-- **USDA Nutrition Data**: 5,000 curated foods with enhanced nutrition calculations
-- **Semantic Search**: FAISS-powered nutrition matching
-- **MongoDB**: Optimized nutrition database with smart indexing
-- **FastAPI**: Production-ready API layer
-- **Streamlit**: Interactive frontend for meal planning
-
-## 📊 Key Features
-
-### **Data Engineering Pipeline**
-- Automated USDA Branded Foods download & processing
-- Enhanced nutrition calculations (per-100g normalization)  
-- Macro breakdown analysis (high-protein/fat/carb classification)
-- Optimized MongoDB indexing for sub-second search
-
-### **AI Agent Workflows**
-- Parallel agent execution with LangGraph
-- Coordinated meal timing with workout planning
-- Personalized nutrition recommendations (bulk/cut/maintenance)
-- Real-time nutrition search and matching
-
-### **Production Patterns**
-- Docker containerization
-- Environment-based configuration
-- LangSmith observability integration
-- Comprehensive error handling & logging
-
-## 🛠️ Development
-
-### Database Management
-```bash
-make db-stats          # Show database statistics
-make test-search       # Test nutrition search functionality  
-make clean-db          # Reset database
-```
-
-### Service Management
-```bash
-make up               # Start all services
-make logs             # View all service logs
-make logs-be          # Backend logs only
-make logs-fe          # Frontend logs only
-```
-
-### Help
-```bash
-make help             # Show all available commands
-```
-
-## 🎯 Perfect for LangChain Blog Features
-
-### **Immediate Impact Story**
-1. **2-minute setup** → Working AI fitness planner
-2. **Real data processing** → 300K foods in 15 minutes  
-3. **LangGraph workflows** → Coordinated AI agents
-4. **Production patterns** → Scalable GenAI architecture
-
-### **Technical Innovation Highlights**
-- **Hybrid Search**: Semantic + traditional nutrition matching
-- **Agent Coordination**: Parallel meal and workout planning
-- **Data Engineering**: Complete USDA pipeline automation
-- **Vector Similarity**: FAISS-powered food recommendations
-
-### **Metrics to Showcase**
-- 300K+ foods processed with enhanced nutrition calculations
-- Sub-second semantic search across complete nutrition database  
-- Parallel agent workflows reducing plan generation time
-- Real-world scenarios: bulk/cut/maintenance nutrition planning
-
-## 📈 Blog Narrative Arc
-
-1. **Hook**: "Building a production GenAI system in 15 minutes"
-2. **Problem**: Complex nutrition planning requires orchestrated AI agents  
-3. **Solution**: LangGraph + real USDA data + coordinated workflows
-4. **Demo**: `make setup-demo` → immediate results
-5. **Results**: Complete personalized fitness planning system
+**What it does**: Upload your profile, get a complete meal + workout plan in minutes. It's like having a personal trainer and nutritionist, but powered by AI.
 
 ---
 
-## Legacy API Endpoints (Still Available)
+## 🚀 Quick Start (5 minutes)
 
-- **Download USDA data**: `@nutrition_setup.get("/load_usda_data/")`
-- **Import to MongoDB**: `@nutrition_setup.post("/import_usda_data/")`  
-- **Search products**: `@nutrition_setup.get("/search_nutrition/")`
-
-
- # Environment Setup
-
-## Quick Start
-
-1. **Copy the environment template:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Update the `.env` file with your actual values:**
-   - Replace placeholder values with your real credentials
-   - Generate secure passwords for database and admin interfaces
-   - Add your API keys where needed
-
-## Required Environment Variables
-
-### Database Setup
-- `DB_USER`: Your PostgreSQL username
-- `DB_PASSWORD`: Secure password for your database
-- `DATABASE_URL`: Complete PostgreSQL connection string
-
-### Security Keys
-- `SECRET_KEY`: Generate a secure random key for JWT tokens
-  ```bash
-  # Generate a secure secret key:
-  python -c "import secrets; print(secrets.token_urlsafe(32))"
-  ```
-
-### Jupyter Password Hash
-Generate your Jupyter password hash:
-```bash
-jupyter server password
-# Copy the generated hash to JUPYTER_PASSWORD_HASH
-```
-
-### API Keys
-- `OPENAI_API_KEY`: Your OpenAI API key (if using AI features)
-- `LANGSMITH_API_KEY`: Your LangSmith key (optional, for monitoring)
-
-## Important Security Notes
-
-- **Never commit your `.env` file to git**
-- The `.env` file is already in `.gitignore`
-- Use strong, unique passwords for all services
-- Regularly rotate your API keys and passwords
-- For production, use environment-specific values
-
-## Docker Setup
-
-If using Docker, the environment variables will be automatically loaded from your `.env` file when running:
+**Prerequisites**: Docker and Git
 
 ```bash
-docker-compose up
+# 1. Clone and setup
+git clone https://github.com/zen-apps/ai-fitness-planner.git
+cd ai-fitness-planner
+cp .env.example .env
+
+# 2. Download nutrition data (75MB)
+curl -L -o usda_sampled_5000_foods.json https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.0/usda_sampled_5000_foods.json
+mkdir -p fast_api/app/api/nutrition_data/samples/
+mv usda_sampled_5000_foods.json fast_api/app/api/nutrition_data/samples/
+
+# 3. Start everything
+make setup-demo
 ```
 
-## Verification
+**That's it!** Access your app:
+- **Frontend**: http://localhost:8526
+- **API Docs**: http://localhost:1015/docs
 
-After setting up your `.env` file, verify it works by checking if the application starts without environment variable errors.
+---
+
+## 🎯 What You Get
+
+### ✅ **Personalized Plans**
+- Custom calorie and macro targets based on your goals
+- AI-generated meal plans using real USDA food data
+- Workout routines tailored to your equipment and experience
+
+### ✅ **Smart Food Search**
+- Semantic search: "high protein breakfast foods" 
+- 5,000 curated foods covering all major categories
+- Dietary restriction filtering (vegetarian, gluten-free, etc.)
+
+### ✅ **LangGraph AI Workflows**
+- Multiple AI agents working together
+- Profile → Meal Planning → Workout Planning → Coordination
+- Real-time plan generation with full traceability
+
+---
+
+## 🛠️ How It Works
+
+### **Multi-Agent System**
+
+```mermaid
+graph TD
+    A[User Profile Input] --> B[LangGraph Workflow Orchestrator]
+    B --> C[Profile Manager Agent]
+    B --> D[Meal Planner Agent]
+    B --> E[Workout Planner Agent]
+    B --> F[Plan Coordinator Agent]
+    B --> G[Summary Agent]
+    
+    C --> H[User Profile DB]
+    D --> I[USDA Nutrition DB - 300K+ Foods]
+    D --> J[FAISS Vector Search]
+    D --> K[Hybrid Search Engine]
+    E --> L[Exercise Database]
+    
+    F --> M[Plan Integration & Timing]
+    G --> N[Complete Fitness Plan]
+    N --> O[Streamlit Frontend]
+    O --> P[Advanced Food Search UI]
+    
+    Q[LangSmith Tracing] --> B
+    Q --> C
+    Q --> D
+    Q --> E
+    Q --> F
+    Q --> G
+```
+
+### **Tech Stack**
+- **LangGraph**: AI workflow orchestration
+- **GPT-4o-mini** and **GPT-o3-mini**: Fast, cost-effective reasoning
+- **LangSmith**: Observability and tracing for AI workflows
+- **FAISS**: Vector search for nutrition data
+- **MongoDB**: 5K curated USDA foods
+- **Streamlit**: Interactive frontend
+- **FastAPI**: Production API backend
+
+---
+
+## 💡 Key Features
+
+### **Smart Nutrition Database**
+- 5,000 intelligently sampled foods from 450K+ USDA database
+- Enhanced with per-100g nutrition calculations
+- Macro breakdown analysis (high-protein/fat/carb classification)
+- Sub-second semantic search
+
+### **Coordinated Planning**
+- Meal timing optimized around workouts
+- Pre/post-workout nutrition recommendations
+- Training day vs rest day meal variations
+- Goal-specific plans (bulk/cut/maintenance)
+
+### **Production Ready**
+- Docker containerization
+- Automated database setup
+- LangSmith observability integration
+- Comprehensive error handling
+
+---
+
+## 🔧 Development
+
+```bash
+# View logs
+make logs
+
+# Reset database
+make clean-db
+
+# Test the system
+curl http://localhost:1015/docs
+```
+
+### **Environment Setup**
+Edit `.env` with your API keys:
+```bash
+OPENAI_API_KEY=sk-your_openai_api_key_here
+LANGSMITH_API_KEY=your_langsmith_key  # Optional
+```
+
+---
+
+## 📊 Example Usage
+
+**Input**: 25-year-old male, 180cm, 75kg, goal: lean bulk, gym access
+
+**Output**:
+```markdown
+# Your Lean Bulk Plan
+
+## Daily Targets
+- 2800 calories
+- 140g protein, 350g carbs, 93g fat
+
+## Sample Meal
+**Breakfast**: Protein Oats Bowl (520 cal)
+- 80g oats, 30g whey protein, 150g banana
+
+## Workout: Push Day
+1. Bench Press: 4 sets × 6-8 reps
+2. Overhead Press: 3 sets × 8-10 reps
+```
+
+---
+
+## 🎨 What Makes This Special
+
+### **LangGraph Workflows**
+Unlike single LLM calls, this uses orchestrated AI agents that:
+- Share context and coordinate decisions
+- Handle complex multi-step reasoning
+- Provide transparent execution tracking
+- Scale to more complex scenarios
+
+### **Real Data Integration**
+- Actual USDA nutrition database (not fake data)
+- Vector embeddings for semantic food matching
+- Production-grade data processing pipeline
+
+### **Production Patterns**
+- Proper error handling and retry logic
+- Observable with LangSmith tracing
+- Scalable architecture with Docker
+- Professional UI/UX
+
+---
+
+## 🚀 Next Steps
+
+Want to extend this? Easy additions:
+- **Progress Tracking Agent**: Monitor user improvements
+- **Supplement Advisor**: Recommend supplements based on diet gaps
+- **Wearable Integration**: Connect fitness trackers
+- **Mobile App**: React Native frontend
+
+---
+
+## 📈 Why LangGraph?
+
+Traditional LLMs give you one response. LangGraph gives you:
+- **Coordinated Intelligence**: Multiple specialists working together
+- **State Management**: Agents share and build on each other's work
+- **Reliability**: Built-in error handling and retry mechanisms
+- **Transparency**: See exactly how decisions are made
+
+Perfect for complex, multi-step AI applications like fitness planning.
+
+---
+
+**Ready to build your own AI fitness coach?** Clone, run `make setup-demo`, and start generating personalized plans in minutes! 💪
