@@ -97,7 +97,7 @@ with st.form("profile_form"):
 
     with col1:
         age = st.number_input(
-            "Age", min_value=16, max_value=80, value=existing_profile.get("age", 25)
+            "Age", min_value=16, max_value=80, value=existing_profile.get("age", 35)
         )
 
         if is_metric:
@@ -111,7 +111,7 @@ with st.form("profile_form"):
             weight_kg = weight_input
         else:
             # Convert existing weight from kg to lbs for display
-            existing_weight_lbs = kg_to_lbs(existing_profile.get("weight", 70.0))
+            existing_weight_lbs = kg_to_lbs(existing_profile.get("weight", 80.0))
             weight_input = st.number_input(
                 "Weight (lbs)",
                 min_value=88.0,  # ~40kg
@@ -135,7 +135,7 @@ with st.form("profile_form"):
                 "Height (cm)",
                 min_value=140.0,
                 max_value=220.0,
-                value=existing_profile.get("height", 175.0),
+                value=existing_profile.get("height", 185.0),
                 step=0.5,
             )
             height_cm = height_input
