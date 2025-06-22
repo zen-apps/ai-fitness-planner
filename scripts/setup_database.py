@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
 Database setup script for AI Fitness Planner
-Handles both demo and full USDA nutrition database setup
+Handles demo USDA nutrition database setup
 """
 
 import argparse
 import sys
-import os
-import json
 import requests
 import time
 from pathlib import Path
@@ -115,74 +113,21 @@ def setup_demo_database():
         print(f"❌ API request failed: {e}")
         return False
 
-def setup_full_database():
-    """Setup full database with complete USDA dataset"""
-    print("🔥 Setting up FULL database with complete USDA dataset...")
-    print("⚠️  This will take approximately 15 minutes...")
-    
-    if not wait_for_api():
-        return False
-    
-    api_base = "http://fast_api_ai_fitness_planner:8000"
-    
-    try:
-        # Test MongoDB connection
-        print("🔍 Testing MongoDB connection...")
-        response = requests.get(f"{api_base}/v1/nutrition_setup/test_mongo_db/")
-        if response.status_code != 200:
-            print(f"❌ MongoDB connection failed: {response.text}")
-            return False
-        print("✅ MongoDB connection successful")
-        
-        # Download full USDA data
-        print("📥 Downloading full USDA dataset (this may take several minutes)...")
-        response = requests.post(f"{api_base}/v1/nutrition_setup/download_raw_usda_data/", timeout=600)
-        if response.status_code != 200:
-            print(f"❌ Failed to download USDA data: {response.text}")
-            return False
-        print("✅ USDA data downloaded successfully")
-        
-        # Import full data
-        print("📥 Importing full USDA dataset (this will take 10-15 minutes)...")
-        response = requests.post(f"{api_base}/v1/nutrition_setup/import_usda_data/", timeout=1200)
-        if response.status_code != 200:
-            print(f"❌ Failed to import USDA data: {response.text}")
-            return False
-        
-        result = response.json()
-        print(f"✅ Successfully imported {result.get('imported_count', 'N/A')} foods")
-        
-        # Get database stats
-        print("📊 Getting database statistics...")
-        response = requests.get(f"{api_base}/v1/nutrition_setup/database_stats/")
-        if response.status_code == 200:
-            stats = response.json()
-            print(f"📊 Database contains {stats.get('total_foods', 'N/A')} foods")
-        
-        print("🎉 Full database setup complete!")
-        return True
-        
-    except requests.RequestException as e:
-        print(f"❌ API request failed: {e}")
-        return False
 
 def main():
     parser = argparse.ArgumentParser(description="Setup AI Fitness Planner database")
     parser.add_argument(
         "--mode", 
-        choices=["demo", "full"], 
-        required=True,
-        help="Setup mode: 'demo' for quick sample data, 'full' for complete USDA dataset"
+        choices=["demo"], 
+        default="demo",
+        help="Setup mode: 'demo' for quick sample data (default: demo)"
     )
     
     args = parser.parse_args()
     
     print(f"🏃‍♂️ Starting {args.mode.upper()} database setup...")
     
-    if args.mode == "demo":
-        success = setup_demo_database()
-    else:
-        success = setup_full_database()
+    success = setup_demo_database()
     
     if success:
         print("✅ Database setup completed successfully!")

@@ -157,8 +157,7 @@ make help             # Show all available commands
 2. **Problem**: Complex nutrition planning requires orchestrated AI agents  
 3. **Solution**: LangGraph + real USDA data + coordinated workflows
 4. **Demo**: `make setup-demo` → immediate results
-5. **Scale**: `make setup-full` → production showcase
-6. **Results**: Complete personalized fitness planning system
+5. **Results**: Complete personalized fitness planning system
 
 ---
 

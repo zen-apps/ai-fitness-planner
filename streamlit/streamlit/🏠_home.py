@@ -30,7 +30,7 @@ This application uses **LangChain Agents** to create personalized fitness and nu
 
 ### 🎯 Features:
 - **Personalized Macro Calculations** based on your goals (cut/bulk/maintenance)
-- **Smart Food Recommendations** from 300k+ USDA branded foods with vector search (5k selected for demo)
+- **Smart Food Recommendations** from curated USDA branded foods with vector search
 - **Structured Meal Plans** with detailed foods, portions, and daily macro tracking
 - **Complete Workout Programs** with exercises, sets, reps, and progression strategies
 - **Real-time Plan Generation** using GPT-4o-mini and GPT-o3-mini powered agents with structured output
@@ -51,10 +51,10 @@ st.subheader("📈 Platform Stats")
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    st.metric("Available Foods", "450k+", "USDA Database")
+    st.metric("Available Foods", "5k", "Demo Dataset")
 
 with col2:
-    st.metric("Demo Selected Foods", "5k", "Vector Search Enabled")
+    st.metric("Vector Search", "✅", "Enabled")
 
 with col3:
     st.metric("Dietary Preferences", "6+", "Vegetarian, Vegan, Keto, etc.")
