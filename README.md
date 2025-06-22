@@ -1,8 +1,12 @@
 # AI Fitness Planner 🏋️‍♂️
 
-A production-ready GenAI system that creates personalized fitness and nutrition plans using **LangGraph workflows**, real USDA nutrition data, and coordinated AI agents.
+Full-stack GenAI system that creates personalized fitness and nutrition plans using **LangGraph workflows**, real USDA nutrition data, and coordinated AI agents.
 
 **What it does**: Upload your profile, get a complete meal + workout plan in minutes. It's like having a personal trainer and nutritionist, but powered by AI.
+
+---
+
+<a href="https://labs.joshjanzen.com/"><img src="https://img.shields.io/badge/🔗_Live-Demo-brightgreen?style=for-the-badge" alt="Live Demo (Google Login Required)"></a>
 
 ---
 
