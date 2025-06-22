@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from utils.api_client import FitnessAPI, init_session_state
+from utils.footer import render_footer
 
 
 # Unit conversion functions
@@ -289,3 +290,6 @@ with st.form("profile_form"):
                     st.metric("Fat", f"{result.get('target_fat_g', 0)}g")
 
                 st.balloons()
+
+# Footer
+render_footer()

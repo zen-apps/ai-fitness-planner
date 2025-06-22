@@ -1,5 +1,6 @@
 import streamlit as st
-from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_sidebar
+from utils.api_client import FitnessAPI, init_session_state
+from utils.footer import render_footer
 
 # Configure page
 st.set_page_config(
@@ -8,7 +9,6 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
-setup_api_settings_sidebar()
 
 # Add meal plan days selector in sidebar
 with st.sidebar:
@@ -359,3 +359,6 @@ if st.button("🚀 Generate Complete Plan", use_container_width=True, type="prim
             st.caption(f"Plan generated on: {result['generated_at']}")
 
         st.balloons()
+
+# Footer
+render_footer()

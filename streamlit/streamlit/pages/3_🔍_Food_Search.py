@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
-from utils.api_client import FitnessAPI, init_session_state, setup_api_settings_sidebar
+from utils.api_client import FitnessAPI, init_session_state
+from utils.footer import render_footer
 
 # Configure page
 st.set_page_config(
@@ -9,7 +10,6 @@ st.set_page_config(
 
 # Initialize session state and setup sidebar
 init_session_state()
-setup_api_settings_sidebar()
 
 st.header("🔍 Food Database Search")
 st.markdown(
@@ -448,3 +448,6 @@ with st.expander("❓ Search Help"):
     - Advanced filters help narrow down large result sets
     """
     )
+
+# Footer
+render_footer()

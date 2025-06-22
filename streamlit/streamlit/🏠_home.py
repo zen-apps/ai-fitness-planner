@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.api_client import init_session_state
+from utils.footer import render_footer
 
 # Configure Streamlit page
 st.set_page_config(
@@ -67,12 +68,4 @@ with col5:
     st.metric("AI Agents", "4", "Structured Output")
 
 # Footer
-st.markdown("---")
-st.markdown(
-    """
-<div style="text-align: center; color: #666; margin-top: 2rem;">
-    <p>Built by Josh Janzen |  All rights reserved.</p>
-</div>
-""",
-    unsafe_allow_html=True,
-)
+render_footer()
