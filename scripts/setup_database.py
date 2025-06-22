@@ -17,7 +17,7 @@ sys.path.append("/app")
 
 def download_usda_sample_data():
     """Download USDA sample data from GitHub releases"""
-    url = "https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.0/usda_sampled_5000_foods.json"
+    url = "https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.1/usda_sampled_5000_foods.json"
     sample_data_path = Path(
         "/app/fast_api/app/api/nutrition_data/samples/usda_sampled_5000_foods.json"
     )

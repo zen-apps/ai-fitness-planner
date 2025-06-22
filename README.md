@@ -16,12 +16,7 @@ git clone https://github.com/zen-apps/ai-fitness-planner.git
 cd ai-fitness-planner
 cp .env.example .env
 
-# 2. Download nutrition data (75MB)
-curl -L -o usda_sampled_5000_foods.json https://github.com/zen-apps/ai-fitness-planner/releases/download/v1.0.0/usda_sampled_5000_foods.json
-mkdir -p fast_api/app/api/nutrition_data/samples/
-mv usda_sampled_5000_foods.json fast_api/app/api/nutrition_data/samples/
-
-# 3. Start everything
+# 2. Start everything (downloads nutrition data automatically)
 make setup-demo
 ```
 
