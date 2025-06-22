@@ -25,31 +25,41 @@ The AI Fitness Planner leverages **LangGraph**, **LangChain**, and **Large Langu
 ### High-Level System Design
 
 ```mermaid
-graph TD
+graph TB
     A[User Profile Input] --> B[LangGraph Workflow Orchestrator]
-    B --> C[Profile Manager Agent]
-    B --> D[Meal Planner Agent]
-    B --> E[Workout Planner Agent]
-    B --> F[Plan Coordinator Agent]
-    B --> G[Summary Agent]
+    B --> C[Profile Manager Agent<br/>~5s]
+    C --> H[Route After Profile<br/>Conditional Logic]
+    H --> F[Plan Coordinator Agent<br/>~3s]
     
-    C --> H[User Profile DB]
-    D --> I[USDA Nutrition DB - 300K+ Foods]
-    D --> J[FAISS Vector Search]
-    D --> K[Hybrid Search Engine]
-    E --> L[Exercise Database]
+    F --> D[Meal Planner Agent<br/>~151s ⚠️]
+    F --> E[Workout Planner Agent<br/>~16s]
     
-    F --> M[Plan Integration & Timing]
-    G --> N[Complete Fitness Plan]
-    N --> O[Streamlit Frontend]
-    O --> P[Advanced Food Search UI]
+    D --> G[Summary Agent]
+    E --> G
+    G --> M[Complete Fitness Plan]
+    M --> N[Streamlit Frontend]
     
-    Q[LangSmith Tracing] --> B
-    Q --> C
-    Q --> D
-    Q --> E
-    Q --> F
-    Q --> G
+    %% Data Sources
+    C --> I[(User Profile DB)]
+    D --> J[(USDA Nutrition DB<br/>4500K+ Foods)]
+    D --> K[FAISS Vector Search<br/>Enhanced Embeddings]
+    E --> L[(Exercise Database)]
+    
+    %% Observability
+    O[LangSmith Tracing<br/>📊 Cost: ~$0.07/plan<br/>📈 19K tokens avg] -.-> B
+    O -.-> C
+    O -.-> D
+    O -.-> E
+    O -.-> F
+    O -.-> G
+    
+    %% Performance Indicators
+    style D fill:#ffebee,stroke:#f44336,stroke-width:3px
+    style E fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    style C fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    style F fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style O fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    style B fill:#e1f5fe,stroke:#2196f3,stroke-width:3px
 ```
 
 ### Technology Stack
@@ -58,7 +68,7 @@ graph TD
 - **LangChain**: LLM integration and tool management
 - **GPT-4**: Primary language model for reasoning and generation
 - **FAISS**: Vector similarity search for nutrition data
-- **MongoDB**: USDA nutrition database (300K+ branded foods)
+- **MongoDB**: USDA nutrition database (carefully sample 5k of 450K+ branded foods)
 - **PostgreSQL**: User profiles and plan storage
 - **FastAPI**: Backend API services
 - **Streamlit**: Interactive frontend with advanced food search
@@ -420,7 +430,7 @@ class WorkflowState:
 
 ### USDA Nutrition Database
 
-**Data Size**: 3.1GB JSON file with 300k+ branded foods
+**Data Size**: 3.1GB JSON file with 4500k+ branded foods, sampled down to 5k foods
 **Storage**: MongoDB for structured queries
 **Vector Search**: FAISS for semantic similarity
 
@@ -519,9 +529,9 @@ The AI Fitness Planner implements a sophisticated food sampling system that crea
 
 ## Data Challenge
 
-**Scale**: The complete USDA FoodData Central branded foods dataset contains over 300,000 food items in a 3.1GB JSON file, making it impractical to process in real-time for every user request.
+**Scale**: The complete USDA FoodData Central branded foods dataset contains over 450,000 food items in a 3.1GB JSON file, making it impractical to process in real-time for every user request.
 
-**Solution**: Implement a smart sampling strategy that maintains nutritional diversity while reducing dataset size by 98% (from 300K+ to 5K foods) without losing essential food variety.
+**Solution**: Implement a smart sampling strategy that maintains nutritional diversity while reducing dataset size by 98% (from 4500K+ to 5K foods) without losing essential food variety.
 
 ## Sampling Strategy
 
@@ -780,7 +790,7 @@ with open(output_file, 'w') as f:
 - **Processing Speed**: 100x faster meal planning queries
 
 ### Vector Search Efficiency  
-- **Embedding Generation**: 5K embeddings vs 300K+ (60x faster)
+- **Embedding Generation**: 5K embeddings vs 450K+ (60x faster)
 - **Search Latency**: Sub-second response times
 - **Index Size**: Manageable FAISS index for real-time queries
 
