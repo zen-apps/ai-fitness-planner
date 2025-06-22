@@ -8,6 +8,9 @@ setup-demo: up
 	@echo "Perfect for: Blog demos, LangGraph testing, immediate results"
 	@sleep 10  # Give services time to start
 	docker-compose exec fast_api_ai_fitness_planner python /app/scripts/setup_database.py --mode=demo
+	@echo "🔍 Creating vector index for semantic search..."
+	@sleep 5  # Give database time to populate
+	curl -X POST "http://localhost:1015/v1/nutrition_search/create_vector_index_sample/" -H "Content-Type: application/json" -s > /dev/null
 	@echo "✅ Demo setup complete! Your AI Fitness Planner is ready for testing."
 
 up: 
