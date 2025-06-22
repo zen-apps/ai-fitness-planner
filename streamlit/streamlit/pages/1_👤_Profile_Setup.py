@@ -135,13 +135,13 @@ with st.form("profile_form"):
                 "Height (cm)",
                 min_value=140.0,
                 max_value=220.0,
-                value=existing_profile.get("height", 185.0),
+                value=existing_profile.get("height", 180.0),
                 step=0.5,
             )
             height_cm = height_input
         else:
             # Convert existing height from cm to feet and inches for display
-            existing_height_cm = existing_profile.get("height", 185.0)
+            existing_height_cm = existing_profile.get("height", 180.0)
             existing_feet, existing_inches = cm_to_ft_in(existing_height_cm)
 
             col_ft, col_in = st.columns(2)
