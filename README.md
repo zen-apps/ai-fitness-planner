@@ -144,29 +144,6 @@ LANGSMITH_API_KEY=your_langsmith_key  # Optional
 
 ---
 
-## 📊 Example Usage
-
-**Input**: 25-year-old male, 180cm, 75kg, goal: lean bulk, gym access
-
-**Output**:
-```markdown
-# Your Lean Bulk Plan
-
-## Daily Targets
-- 2800 calories
-- 140g protein, 350g carbs, 93g fat
-
-## Sample Meal
-**Breakfast**: Protein Oats Bowl (520 cal)
-- 80g oats, 30g whey protein, 150g banana
-
-## Workout: Push Day
-1. Bench Press: 4 sets × 6-8 reps
-2. Overhead Press: 3 sets × 8-10 reps
-```
-
----
-
 ## 🎨 What Makes This Special
 
 ### **LangGraph Workflows**
@@ -182,10 +159,8 @@ Unlike single LLM calls, this uses orchestrated AI agents that:
 - Production-grade data processing pipeline
 
 ### **Production Patterns**
-- Proper error handling and retry logic
 - Observable with LangSmith tracing
 - Scalable architecture with Docker
-- Professional UI/UX
 
 ---
 
